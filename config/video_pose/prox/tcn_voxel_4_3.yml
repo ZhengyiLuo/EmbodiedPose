@@ -1,0 +1,158 @@
+notes: "no sept grad"
+proj_name: "scene+"
+
+data_specs:
+  prox_path: /hdd/zen/data/video_pose/prox/qualitative
+  train_files_path:
+    # - [/hdd/zen/data/ActBound/AMASS/amass_copycat_take5_5.pkl, amass]
+    - [/hdd/zen/data/ActBound/AMASS/amass_copycat_take5.pkl, amass]
+    - [/hdd/zen/data/ActBound/AMASS/kinpoly_mocap_smpl_grad_height.pkl, amass]
+    - [/hdd/zen/data/ActBound/AMASS/h36m_train_30_qpos_fk.pkl, amass]
+    # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_train_30_fk.p, scene_pose]
+  test_files_path:
+    # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk_valid.p, scene_pose]
+    # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk.p, scene_pose]
+    - [/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_overlap_full.pkl, scene_pose]
+
+  neutral_path: /hdd/zen/data/ActBound/AMASS/standing_neutral.pkl
+  t_min: 30
+  t_max: 300
+  fr_num: 120
+  num_samples: 128
+  batch_size: 1
+  base_rot: [0.7071, 0.7071, 0.0, 0.0]
+  
+seed: 1
+env_name: kin_res
+agent_name: scene_pretrain
+# agent_name: scene_v2
+
+cc_cfg: copycat_e_1
+cc_iter: -1
+
+lr: 5.e-5
+weightdecay: 0.0
+num_epoch: 3000
+num_epoch_fix: 20
+save_n_epochs: 1000
+
+iter_method: iter
+shuffle: true
+has_z: true
+policy_optimizer: Adam
+
+features: 
+  use_img: true
+  use_2d: true
+  use_head: false
+  use_vel: false
+  smooth: false
+
+model_specs:
+  use_sdf: false
+  use_rnn: true
+  use_rr: false
+  use_rt: false
+  use_rvel: True
+  use_bvel: True
+  use_rel2d: false
+  use_2d: false
+  use_3d_grad: false
+  use_3d_grad_adpt: true
+  use_3d_grad_sept: false
+  
+  use_3d_grad_ord: 2
+  use_prior: true
+  voxel_res: 16
+  use_voxel: true
+  use_mcp: true
+
+  geo_trans: true
+  geo_trans_cap: 0.1
+
+  vel_l1_mul: 0.1
+  load_scene: true
+
+  use_tcn: True
+  tcn_arch: "3,3,3,3"
+  tcn_3dpos: false
+  tcn_body: false
+  tcn_traj: false
+  casual_tcn: true
+
+  rnn_hdim: 512
+  model_name: kin_net_humor_res
+  model_v: 1
+  mlp_hsize: [1024, 512, 256]
+  mlp_htype: 'gelu'
+  # gt_rate: 0.05
+  gt_rate: 0.0
+  gt_rate_decay: true
+  out_rot_rep: "aa"
+  weights:
+    l2_loss: 2.0
+    
+  learned_prior: false
+  add_noise: true
+  noise_std: 0.01
+  remove_base: false
+  init_update: false
+  full_update: false
+  optimizer: Adam
+  humor_aa: True
+
+policy_specs:
+  policy_name: kin_policy_humor_res
+  log_std:  -1
+  fix_std: true
+  gamma: 0.95
+  tau: 0.95
+  policy_htype: relu
+  policy_hsize: [512, 256]
+  policy_optimizer: 'Adam'
+  # policy_lr: 5.e-6
+  policy_lr: 2.e-5
+  policy_momentum: 0.0
+  policy_weightdecay: 0.0
+  value_htype: relu
+  value_hsize: [512, 256]
+  value_optimizer: 'Adam'
+  value_lr: 3.e-4
+  value_momentum: 0.0
+  value_weightdecay: 0.0
+  clip_epsilon: 0.2
+  fix_std: true
+  reward_id: 'reprojection_reward3d_gt'
+  end_reward: false
+  min_batch_size: 1000
+  # min_batch_size: 100
+
+  rl_update: true
+  init_update: true
+  step_update: true
+  full_update: false
+
+  sampling_temp: 0.3
+  sampling_freq: 0.5
+
+  num_init_update: 0
+  num_step_update: 30
+  num_optim_epoch: 0
+  warm_update_full: 50
+  warm_update_eval: 1
+  # warm_update_full: 50
+
+  reward_weights:
+    w_p: 0.1
+    w_e: 0.15
+    w_c: 0.1
+    w_p_gt: 0.1
+    w_e_gt: 0.15
+    w_c_gt: 0.1
+    w_kp: 0.3
+
+    k_p: 2.0
+    k_e: 5.0
+    k_c: 100.0
+    k_kp: 0.0001
+    k_pc: 50.0

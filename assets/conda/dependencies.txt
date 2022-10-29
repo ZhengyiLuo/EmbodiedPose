@@ -1,0 +1,20 @@
+# pytorch
+conda install pytorch torchvision cudatoolkit=9.0 -c pytorch
+
+# mujoco-py
+pip install mujoco-py
+sudo apt install libosmesa6-dev (ubuntu)
+sudo apt-get install libglu1-mesa-dev freeglut3-dev mesa-common-dev (ubuntu)
+sudo yum install mesa-libOSMesa-devel (centos)
+
+# gym
+pip install gym
+
+# opencv
+conda install -c menpo opencv
+
+# tensorflow OpenGL yaml
+conda install tensorflow pyopengl pyyaml
+
+# bash
+export OMP_NUM_THREADS=1
