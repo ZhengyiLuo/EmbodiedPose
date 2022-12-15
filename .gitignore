@@ -18,7 +18,10 @@ out.log
 tmp
 Tools
 archive
-data
 transfer_data
 transfer_data/
 temp/
+data/smpl
+data/vposer
+data/humor
+data/scene_mesh
