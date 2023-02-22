@@ -1,4 +1,4 @@
-> Repo under construction- please check back soon! 
+> Repo under construction- please keep an eye out for updates!!
 
 # Embodied Scene-aware Human Pose Estimation
 
@@ -16,6 +16,7 @@ To create the environment, follow the following instructions:
 ```
 conda create -n embodiedpose python=3.8
 conda install pytorch torchvision torchaudio pytorch-cuda=11.6 -c pytorch -c nvidia
+pip install -r requirements.txt
 ```
 
 2. Download and setup mujoco: [Mujoco](http://www.mujoco.org/)
@@ -34,4 +35,38 @@ git clone git@github.com:ZhengyiLuo/UniversalHumanoidControl.git
 cd UniversalHumanoidControl
 pip install -e .
 ```
+
+## Download data
+```
+bash download_data.sh
+```
+
+## Evaluation 
+```
+python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
+```
+
+## Training
+TBD
+
+## Citation
+If you find this work useful for your research, please cite our paper:
+```
+@inproceedings{Luo2022EmbodiedSH,
+  title={Embodied Scene-aware Human Pose Estimation},
+  author={Zhengyi Luo and Shun Iwase and Ye Yuan and Kris Kitani},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2022}
+}
+```
+
+## References
+This repository is built on top of the following amazing repositories:
+* State transition code is from: [HuMoR](https://github.com/davrempe/humor)
+* Part of the UHC code is from: [rfc](https://github.com/Khrylx/RFC)
+* SMPL models and layer is from: [SMPL-X model](https://github.com/vchoutas/smplx)
+* Feature extractors are from: [SPIN](https://github.com/nkolot/SPIN)
+* NN modules are from (khrylib): [DLOW](https://github.com/Khrylx/DLow)
+
+
 

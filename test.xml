@@ -1,6 +1,5 @@
 <mujoco model="humanoid">
   <compiler angle="degree" inertiafromgeom="true" coordinate="global"/>
-  <include file="./common/materials.xml"/>
   <visual>
     <headlight ambient=".4 .4 .4" diffuse=".8 .8 .8" specular="0.1 0.1 0.1"/>
     <map znear=".01"/>
@@ -8,173 +7,176 @@
   </visual>
   <default>
     <joint damping="0.0" armature="0.01" stiffness="0.0" limited="true"/>
-    <geom conaffinity="7" condim="1" contype="7" margin="0.001" material="self" rgba="0.8 0.6 .4 1"/>
+    <geom conaffinity="1" condim="1" contype="7" margin="0.001" rgba="0.8 0.6 .4 1"/>
   </default>
   <statistic extent="3" center="0 0 1"/>
   <option timestep="0.00222222222"/>
   <asset>
-    <texture type="skybox" file="./common/sky1.png" gridsize="3 4" gridlayout=".U..LFRB.D.." width="8192" height="8192"/>
-    <texture builtin="flat" height="1278" mark="cross" markrgb="1 1 1" name="texgeom" random="0.01" rgb1=".8 .6 .4" rgb2=".8 .6 .4" type="cube" width="127"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/Pelvis.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Hip.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Hip.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/Torso.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Knee.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Knee.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/Spine.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Ankle.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Ankle.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/Chest.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Toe.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Toe.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/Neck.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Thorax.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Thorax.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/Head.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Shoulder.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Shoulder.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Elbow.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Elbow.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Wrist.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Wrist.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/L_Hand.stl"/>
-    <mesh file="/tmp/smpl/d6d1260c-c110-409c-8fd2-44763c278542/geom/R_Hand.stl"/>
+    <texture type="skybox" builtin="gradient" rgb1=".4 .5 .6" rgb2="0 0 0" width="100" height="100"/>
+    <texture builtin="flat" height="1278" mark="cross" markrgb="1 1 1" name="texgeom" random="0.01" rgb1="0.8 0.6 0.4" rgb2="0.8 0.6 0.4" type="cube" width="127"/>
+    <texture builtin="checker" height="100" name="texplane" rgb1="0 0 0" rgb2="0.8 0.8 0.8" type="2d" width="100"/>
+    <material name="MatPlane" reflectance="0.5" shininess="1" specular="1" texrepeat="60 60" texture="texplane"/>
+    <material name="geom" texture="texgeom" texuniform="true"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/Pelvis.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Hip.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Hip.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/Torso.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Knee.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Knee.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/Spine.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Ankle.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Ankle.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/Chest.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Toe.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Toe.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/Neck.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Thorax.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Thorax.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/Head.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Shoulder.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Shoulder.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Elbow.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Elbow.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Wrist.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Wrist.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/L_Hand.stl"/>
+    <mesh file="/tmp/smpl/86bde034-d88d-4756-a67b-8a15e0d32f1e/geom/R_Hand.stl"/>
   </asset>
   <worldbody>
     <light cutoff="100" diffuse="1 1 1" dir="-0 0 -1.3" directional="true" exponent="1" pos="0 0 1.3" specular=".1 .1 .1"/>
-    <geom condim="3" friction="1. .1 .1" material="grid" name="floor" pos="0 0 0" rgba=".8 .9 .8 1" size="100 100 .2" type="plane"/>
-    <body name="Pelvis" pos="-0.0018 -0.2233 0.0282" quat="1.0000 0.0000 0.0000 0.0000">
-      <joint name="Pelvis" pos="-0.0018 -0.2233 0.0282" limited="false" type="free" armature="0" damping="0" stiffness="0" frictionloss="0"/>
+    <geom conaffinity="1" condim="3" name="floor" pos="0 0 0" rgba="0.8 0.9 0.8 1" size="100 100 .2" type="plane" material="MatPlane"/>
+    <body name="Pelvis" pos="-0.0021 -0.2361 0.029" quat="1.0000 0.0000 0.0000 0.0000">
+      <joint name="Pelvis" pos="-0.0021 -0.2361 0.029" limited="false" type="free" armature="0" damping="0" stiffness="0" frictionloss="0"/>
       <geom type="mesh" mesh="Pelvis" contype="1" conaffinity="1"/>
-      <body name="L_Hip" pos="0.0677 -0.3147 0.0214" quat="1.0000 0.0000 0.0000 0.0000">
-        <joint name="L_Hip_z" type="hinge" pos="0.0677 -0.3147 0.0214" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-        <joint name="L_Hip_y" type="hinge" pos="0.0677 -0.3147 0.0214" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-        <joint name="L_Hip_x" type="hinge" pos="0.0677 -0.3147 0.0214" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+      <body name="L_Hip" pos="0.0673 -0.3292 0.0221" quat="1.0000 0.0000 0.0000 0.0000">
+        <joint name="L_Hip_z" type="hinge" pos="0.0673 -0.3292 0.0221" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <joint name="L_Hip_y" type="hinge" pos="0.0673 -0.3292 0.0221" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <joint name="L_Hip_x" type="hinge" pos="0.0673 -0.3292 0.0221" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
         <geom type="mesh" mesh="L_Hip" contype="1" conaffinity="1"/>
-        <body name="L_Knee" pos="0.102 -0.6899 0.0169" quat="1.0000 0.0000 0.0000 0.0000">
-          <joint name="L_Knee_z" type="hinge" pos="0.102 -0.6899 0.0169" axis="0 0 1" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-          <joint name="L_Knee_y" type="hinge" pos="0.102 -0.6899 0.0169" axis="0 1 0" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-          <joint name="L_Knee_x" type="hinge" pos="0.102 -0.6899 0.0169" axis="1 0 0" range="-11.2500 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <body name="L_Knee" pos="0.1 -0.6956 0.0177" quat="1.0000 0.0000 0.0000 0.0000">
+          <joint name="L_Knee_z" type="hinge" pos="0.1 -0.6956 0.0177" axis="0 0 1" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <joint name="L_Knee_y" type="hinge" pos="0.1 -0.6956 0.0177" axis="0 1 0" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <joint name="L_Knee_x" type="hinge" pos="0.1 -0.6956 0.0177" axis="1 0 0" range="-11.2500 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
           <geom type="mesh" mesh="L_Knee" contype="1" conaffinity="1"/>
-          <body name="L_Ankle" pos="0.0884 -1.0879 -0.0268" quat="1.0000 0.0000 0.0000 0.0000">
-            <joint name="L_Ankle_z" type="hinge" pos="0.0884 -1.0879 -0.0268" axis="0 0 1" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-            <joint name="L_Ankle_y" type="hinge" pos="0.0884 -1.0879 -0.0268" axis="0 1 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-            <joint name="L_Ankle_x" type="hinge" pos="0.0884 -1.0879 -0.0268" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <body name="L_Ankle" pos="0.0858 -1.0854 -0.0262" quat="1.0000 0.0000 0.0000 0.0000">
+            <joint name="L_Ankle_z" type="hinge" pos="0.0858 -1.0854 -0.0262" axis="0 0 1" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <joint name="L_Ankle_y" type="hinge" pos="0.0858 -1.0854 -0.0262" axis="0 1 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <joint name="L_Ankle_x" type="hinge" pos="0.0858 -1.0854 -0.0262" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
             <geom type="mesh" mesh="L_Ankle" contype="1" conaffinity="1"/>
-            <body name="L_Toe" pos="0.1148 -1.1437 0.0925" quat="1.0000 0.0000 0.0000 0.0000">
-              <joint name="L_Toe_z" type="hinge" pos="0.1148 -1.1437 0.0925" axis="0 0 1" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="L_Toe_y" type="hinge" pos="0.1148 -1.1437 0.0925" axis="0 1 0" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="L_Toe_x" type="hinge" pos="0.1148 -1.1437 0.0925" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <body name="L_Toe" pos="0.1106 -1.1402 0.0935" quat="1.0000 0.0000 0.0000 0.0000">
+              <joint name="L_Toe_z" type="hinge" pos="0.1106 -1.1402 0.0935" axis="0 0 1" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="L_Toe_y" type="hinge" pos="0.1106 -1.1402 0.0935" axis="0 1 0" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="L_Toe_x" type="hinge" pos="0.1106 -1.1402 0.0935" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
               <geom type="mesh" mesh="L_Toe" contype="1" conaffinity="1"/>
             </body>
           </body>
         </body>
       </body>
-      <body name="R_Hip" pos="-0.0695 -0.3139 0.0239" quat="1.0000 0.0000 0.0000 0.0000">
-        <joint name="R_Hip_z" type="hinge" pos="-0.0695 -0.3139 0.0239" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-        <joint name="R_Hip_y" type="hinge" pos="-0.0695 -0.3139 0.0239" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-        <joint name="R_Hip_x" type="hinge" pos="-0.0695 -0.3139 0.0239" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+      <body name="R_Hip" pos="-0.0698 -0.3282 0.0247" quat="1.0000 0.0000 0.0000 0.0000">
+        <joint name="R_Hip_z" type="hinge" pos="-0.0698 -0.3282 0.0247" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <joint name="R_Hip_y" type="hinge" pos="-0.0698 -0.3282 0.0247" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <joint name="R_Hip_x" type="hinge" pos="-0.0698 -0.3282 0.0247" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
         <geom type="mesh" mesh="R_Hip" contype="1" conaffinity="1"/>
-        <body name="R_Knee" pos="-0.1078 -0.6964 0.015" quat="1.0000 0.0000 0.0000 0.0000">
-          <joint name="R_Knee_z" type="hinge" pos="-0.1078 -0.6964 0.015" axis="0 0 1" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-          <joint name="R_Knee_y" type="hinge" pos="-0.1078 -0.6964 0.015" axis="0 1 0" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-          <joint name="R_Knee_x" type="hinge" pos="-0.1078 -0.6964 0.015" axis="1 0 0" range="-11.2500 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <body name="R_Knee" pos="-0.1063 -0.7033 0.016" quat="1.0000 0.0000 0.0000 0.0000">
+          <joint name="R_Knee_z" type="hinge" pos="-0.1063 -0.7033 0.016" axis="0 0 1" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <joint name="R_Knee_y" type="hinge" pos="-0.1063 -0.7033 0.016" axis="0 1 0" range="-11.2500 11.2500" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <joint name="R_Knee_x" type="hinge" pos="-0.1063 -0.7033 0.016" axis="1 0 0" range="-11.2500 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
           <geom type="mesh" mesh="R_Knee" contype="1" conaffinity="1"/>
-          <body name="R_Ankle" pos="-0.092 -1.0948 -0.0273" quat="1.0000 0.0000 0.0000 0.0000">
-            <joint name="R_Ankle_z" type="hinge" pos="-0.092 -1.0948 -0.0273" axis="0 0 1" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-            <joint name="R_Ankle_y" type="hinge" pos="-0.092 -1.0948 -0.0273" axis="0 1 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-            <joint name="R_Ankle_x" type="hinge" pos="-0.092 -1.0948 -0.0273" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <body name="R_Ankle" pos="-0.0899 -1.0938 -0.0266" quat="1.0000 0.0000 0.0000 0.0000">
+            <joint name="R_Ankle_z" type="hinge" pos="-0.0899 -1.0938 -0.0266" axis="0 0 1" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <joint name="R_Ankle_y" type="hinge" pos="-0.0899 -1.0938 -0.0266" axis="0 1 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <joint name="R_Ankle_x" type="hinge" pos="-0.0899 -1.0938 -0.0266" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
             <geom type="mesh" mesh="R_Ankle" contype="1" conaffinity="1"/>
-            <body name="R_Toe" pos="-0.1174 -1.143 0.0961" quat="1.0000 0.0000 0.0000 0.0000">
-              <joint name="R_Toe_z" type="hinge" pos="-0.1174 -1.143 0.0961" axis="0 0 1" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="R_Toe_y" type="hinge" pos="-0.1174 -1.143 0.0961" axis="0 1 0" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="R_Toe_x" type="hinge" pos="-0.1174 -1.143 0.0961" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <body name="R_Toe" pos="-0.115 -1.141 0.0971" quat="1.0000 0.0000 0.0000 0.0000">
+              <joint name="R_Toe_z" type="hinge" pos="-0.115 -1.141 0.0971" axis="0 0 1" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="R_Toe_y" type="hinge" pos="-0.115 -1.141 0.0971" axis="0 1 0" range="-45.0000 45.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="R_Toe_x" type="hinge" pos="-0.115 -1.141 0.0971" axis="1 0 0" range="-90.0000 90.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
               <geom type="mesh" mesh="R_Toe" contype="1" conaffinity="1"/>
             </body>
           </body>
         </body>
       </body>
-      <body name="Torso" pos="-0.0043 -0.1144 0.0015" quat="1.0000 0.0000 0.0000 0.0000">
-        <joint name="Torso_z" type="hinge" pos="-0.0043 -0.1144 0.0015" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-        <joint name="Torso_y" type="hinge" pos="-0.0043 -0.1144 0.0015" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-        <joint name="Torso_x" type="hinge" pos="-0.0043 -0.1144 0.0015" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+      <body name="Torso" pos="-0.0047 -0.1242 0.001" quat="1.0000 0.0000 0.0000 0.0000">
+        <joint name="Torso_z" type="hinge" pos="-0.0047 -0.1242 0.001" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <joint name="Torso_y" type="hinge" pos="-0.0047 -0.1242 0.001" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <joint name="Torso_x" type="hinge" pos="-0.0047 -0.1242 0.001" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
         <geom type="mesh" mesh="Torso" contype="1" conaffinity="1"/>
-        <body name="Spine" pos="0.0012 0.0208 0.0026" quat="1.0000 0.0000 0.0000 0.0000">
-          <joint name="Spine_z" type="hinge" pos="0.0012 0.0208 0.0026" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-          <joint name="Spine_y" type="hinge" pos="0.0012 0.0208 0.0026" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-          <joint name="Spine_x" type="hinge" pos="0.0012 0.0208 0.0026" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+        <body name="Spine" pos="0.0014 0.0178 0.0025" quat="1.0000 0.0000 0.0000 0.0000">
+          <joint name="Spine_z" type="hinge" pos="0.0014 0.0178 0.0025" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <joint name="Spine_y" type="hinge" pos="0.0014 0.0178 0.0025" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <joint name="Spine_x" type="hinge" pos="0.0014 0.0178 0.0025" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
           <geom type="mesh" mesh="Spine" contype="1" conaffinity="1"/>
-          <body name="Chest" pos="0.0026 0.0737 0.028" quat="1.0000 0.0000 0.0000 0.0000">
-            <joint name="Chest_z" type="hinge" pos="0.0026 0.0737 0.028" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-            <joint name="Chest_y" type="hinge" pos="0.0026 0.0737 0.028" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-            <joint name="Chest_x" type="hinge" pos="0.0026 0.0737 0.028" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+          <body name="Chest" pos="0.0028 0.0732 0.0288" quat="1.0000 0.0000 0.0000 0.0000">
+            <joint name="Chest_z" type="hinge" pos="0.0028 0.0732 0.0288" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <joint name="Chest_y" type="hinge" pos="0.0028 0.0732 0.0288" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <joint name="Chest_x" type="hinge" pos="0.0028 0.0732 0.0288" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
             <geom type="mesh" mesh="Chest" contype="1" conaffinity="1"/>
-            <body name="Neck" pos="-0.0002 0.2876 -0.0148" quat="1.0000 0.0000 0.0000 0.0000">
-              <joint name="Neck_z" type="hinge" pos="-0.0002 0.2876 -0.0148" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="Neck_y" type="hinge" pos="-0.0002 0.2876 -0.0148" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="Neck_x" type="hinge" pos="-0.0002 0.2876 -0.0148" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <body name="Neck" pos="-0 0.2916 -0.0164" quat="1.0000 0.0000 0.0000 0.0000">
+              <joint name="Neck_z" type="hinge" pos="-0 0.2916 -0.0164" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="Neck_y" type="hinge" pos="-0 0.2916 -0.0164" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="Neck_x" type="hinge" pos="-0 0.2916 -0.0164" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
               <geom type="mesh" mesh="Neck" contype="1" conaffinity="1"/>
-              <body name="Head" pos="0.005 0.3526 0.0365" quat="1.0000 0.0000 0.0000 0.0000">
-                <joint name="Head_z" type="hinge" pos="0.005 0.3526 0.0365" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                <joint name="Head_y" type="hinge" pos="0.005 0.3526 0.0365" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                <joint name="Head_x" type="hinge" pos="0.005 0.3526 0.0365" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <body name="Head" pos="0.0054 0.3577 0.0356" quat="1.0000 0.0000 0.0000 0.0000">
+                <joint name="Head_z" type="hinge" pos="0.0054 0.3577 0.0356" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <joint name="Head_y" type="hinge" pos="0.0054 0.3577 0.0356" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <joint name="Head_x" type="hinge" pos="0.0054 0.3577 0.0356" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                 <geom type="mesh" mesh="Head" contype="1" conaffinity="1"/>
               </body>
             </body>
-            <body name="L_Thorax" pos="0.0815 0.1955 -0.006" quat="1.0000 0.0000 0.0000 0.0000">
-              <joint name="L_Thorax_z" type="hinge" pos="0.0815 0.1955 -0.006" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="L_Thorax_y" type="hinge" pos="0.0815 0.1955 -0.006" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="L_Thorax_x" type="hinge" pos="0.0815 0.1955 -0.006" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <body name="L_Thorax" pos="0.0827 0.1973 -0.0061" quat="1.0000 0.0000 0.0000 0.0000">
+              <joint name="L_Thorax_z" type="hinge" pos="0.0827 0.1973 -0.0061" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="L_Thorax_y" type="hinge" pos="0.0827 0.1973 -0.0061" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="L_Thorax_x" type="hinge" pos="0.0827 0.1973 -0.0061" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
               <geom type="mesh" mesh="L_Thorax" contype="1" conaffinity="1"/>
-              <body name="L_Shoulder" pos="0.1724 0.226 -0.0149" quat="1.0000 0.0000 0.0000 0.0000">
-                <joint name="L_Shoulder_z" type="hinge" pos="0.1724 0.226 -0.0149" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                <joint name="L_Shoulder_y" type="hinge" pos="0.1724 0.226 -0.0149" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                <joint name="L_Shoulder_x" type="hinge" pos="0.1724 0.226 -0.0149" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <body name="L_Shoulder" pos="0.1752 0.2261 -0.0153" quat="1.0000 0.0000 0.0000 0.0000">
+                <joint name="L_Shoulder_z" type="hinge" pos="0.1752 0.2261 -0.0153" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <joint name="L_Shoulder_y" type="hinge" pos="0.1752 0.2261 -0.0153" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <joint name="L_Shoulder_x" type="hinge" pos="0.1752 0.2261 -0.0153" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                 <geom type="mesh" mesh="L_Shoulder" contype="1" conaffinity="1"/>
-                <body name="L_Elbow" pos="0.432 0.2132 -0.0424" quat="1.0000 0.0000 0.0000 0.0000">
-                  <joint name="L_Elbow_z" type="hinge" pos="0.432 0.2132 -0.0424" axis="0 0 1" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                  <joint name="L_Elbow_y" type="hinge" pos="0.432 0.2132 -0.0424" axis="0 1 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                  <joint name="L_Elbow_x" type="hinge" pos="0.432 0.2132 -0.0424" axis="1 0 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <body name="L_Elbow" pos="0.4314 0.2149 -0.0424" quat="1.0000 0.0000 0.0000 0.0000">
+                  <joint name="L_Elbow_z" type="hinge" pos="0.4314 0.2149 -0.0424" axis="0 0 1" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                  <joint name="L_Elbow_y" type="hinge" pos="0.4314 0.2149 -0.0424" axis="0 1 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                  <joint name="L_Elbow_x" type="hinge" pos="0.4314 0.2149 -0.0424" axis="1 0 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                   <geom type="mesh" mesh="L_Elbow" contype="1" conaffinity="1"/>
-                  <body name="L_Wrist" pos="0.6813 0.2222 -0.0435" quat="1.0000 0.0000 0.0000 0.0000">
-                    <joint name="L_Wrist_z" type="hinge" pos="0.6813 0.2222 -0.0435" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                    <joint name="L_Wrist_y" type="hinge" pos="0.6813 0.2222 -0.0435" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                    <joint name="L_Wrist_x" type="hinge" pos="0.6813 0.2222 -0.0435" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                  <body name="L_Wrist" pos="0.6774 0.223 -0.0435" quat="1.0000 0.0000 0.0000 0.0000">
+                    <joint name="L_Wrist_z" type="hinge" pos="0.6774 0.223 -0.0435" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                    <joint name="L_Wrist_y" type="hinge" pos="0.6774 0.223 -0.0435" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                    <joint name="L_Wrist_x" type="hinge" pos="0.6774 0.223 -0.0435" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                     <geom type="mesh" mesh="L_Wrist" contype="1" conaffinity="1"/>
-                    <body name="L_Hand" pos="0.7653 0.214 -0.0585" quat="1.0000 0.0000 0.0000 0.0000">
-                      <joint name="L_Hand_z" type="hinge" pos="0.7653 0.214 -0.0585" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                      <joint name="L_Hand_y" type="hinge" pos="0.7653 0.214 -0.0585" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                      <joint name="L_Hand_x" type="hinge" pos="0.7653 0.214 -0.0585" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                    <body name="L_Hand" pos="0.7616 0.2153 -0.0585" quat="1.0000 0.0000 0.0000 0.0000">
+                      <joint name="L_Hand_z" type="hinge" pos="0.7616 0.2153 -0.0585" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                      <joint name="L_Hand_y" type="hinge" pos="0.7616 0.2153 -0.0585" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                      <joint name="L_Hand_x" type="hinge" pos="0.7616 0.2153 -0.0585" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                       <geom type="mesh" mesh="L_Hand" contype="1" conaffinity="1"/>
                     </body>
                   </body>
                 </body>
               </body>
             </body>
-            <body name="R_Thorax" pos="-0.0791 0.1926 -0.0106" quat="1.0000 0.0000 0.0000 0.0000">
-              <joint name="R_Thorax_z" type="hinge" pos="-0.0791 0.1926 -0.0106" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="R_Thorax_y" type="hinge" pos="-0.0791 0.1926 -0.0106" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-              <joint name="R_Thorax_x" type="hinge" pos="-0.0791 0.1926 -0.0106" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+            <body name="R_Thorax" pos="-0.0801 0.1941 -0.0107" quat="1.0000 0.0000 0.0000 0.0000">
+              <joint name="R_Thorax_z" type="hinge" pos="-0.0801 0.1941 -0.0107" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="R_Thorax_y" type="hinge" pos="-0.0801 0.1941 -0.0107" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <joint name="R_Thorax_x" type="hinge" pos="-0.0801 0.1941 -0.0107" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
               <geom type="mesh" mesh="R_Thorax" contype="1" conaffinity="1"/>
-              <body name="R_Shoulder" pos="-0.1752 0.2251 -0.0197" quat="1.0000 0.0000 0.0000 0.0000">
-                <joint name="R_Shoulder_z" type="hinge" pos="-0.1752 0.2251 -0.0197" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                <joint name="R_Shoulder_y" type="hinge" pos="-0.1752 0.2251 -0.0197" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                <joint name="R_Shoulder_x" type="hinge" pos="-0.1752 0.2251 -0.0197" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+              <body name="R_Shoulder" pos="-0.178 0.2251 -0.0201" quat="1.0000 0.0000 0.0000 0.0000">
+                <joint name="R_Shoulder_z" type="hinge" pos="-0.178 0.2251 -0.0201" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <joint name="R_Shoulder_y" type="hinge" pos="-0.178 0.2251 -0.0201" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <joint name="R_Shoulder_x" type="hinge" pos="-0.178 0.2251 -0.0201" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                 <geom type="mesh" mesh="R_Shoulder" contype="1" conaffinity="1"/>
-                <body name="R_Elbow" pos="-0.4289 0.2118 -0.0411" quat="1.0000 0.0000 0.0000 0.0000">
-                  <joint name="R_Elbow_z" type="hinge" pos="-0.4289 0.2118 -0.0411" axis="0 0 1" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                  <joint name="R_Elbow_y" type="hinge" pos="-0.4289 0.2118 -0.0411" axis="0 1 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                  <joint name="R_Elbow_x" type="hinge" pos="-0.4289 0.2118 -0.0411" axis="1 0 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                <body name="R_Elbow" pos="-0.4284 0.2136 -0.0415" quat="1.0000 0.0000 0.0000 0.0000">
+                  <joint name="R_Elbow_z" type="hinge" pos="-0.4284 0.2136 -0.0415" axis="0 0 1" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                  <joint name="R_Elbow_y" type="hinge" pos="-0.4284 0.2136 -0.0415" axis="0 1 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                  <joint name="R_Elbow_x" type="hinge" pos="-0.4284 0.2136 -0.0415" axis="1 0 0" range="-720.0000 720.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                   <geom type="mesh" mesh="R_Elbow" contype="1" conaffinity="1"/>
-                  <body name="R_Wrist" pos="-0.6842 0.2196 -0.0467" quat="1.0000 0.0000 0.0000 0.0000">
-                    <joint name="R_Wrist_z" type="hinge" pos="-0.6842 0.2196 -0.0467" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                    <joint name="R_Wrist_y" type="hinge" pos="-0.6842 0.2196 -0.0467" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                    <joint name="R_Wrist_x" type="hinge" pos="-0.6842 0.2196 -0.0467" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                  <body name="R_Wrist" pos="-0.68 0.2202 -0.0474" quat="1.0000 0.0000 0.0000 0.0000">
+                    <joint name="R_Wrist_z" type="hinge" pos="-0.68 0.2202 -0.0474" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                    <joint name="R_Wrist_y" type="hinge" pos="-0.68 0.2202 -0.0474" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                    <joint name="R_Wrist_x" type="hinge" pos="-0.68 0.2202 -0.0474" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                     <geom type="mesh" mesh="R_Wrist" contype="1" conaffinity="1"/>
-                    <body name="R_Hand" pos="-0.7688 0.2134 -0.057" quat="1.0000 0.0000 0.0000 0.0000">
-                      <joint name="R_Hand_z" type="hinge" pos="-0.7688 0.2134 -0.057" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                      <joint name="R_Hand_y" type="hinge" pos="-0.7688 0.2134 -0.057" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
-                      <joint name="R_Hand_x" type="hinge" pos="-0.7688 0.2134 -0.057" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                    <body name="R_Hand" pos="-0.7648 0.2144 -0.0576" quat="1.0000 0.0000 0.0000 0.0000">
+                      <joint name="R_Hand_z" type="hinge" pos="-0.7648 0.2144 -0.0576" axis="0 0 1" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                      <joint name="R_Hand_y" type="hinge" pos="-0.7648 0.2144 -0.0576" axis="0 1 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
+                      <joint name="R_Hand_x" type="hinge" pos="-0.7648 0.2144 -0.0576" axis="1 0 0" range="-180.0000 180.0000" damping="0" stiffness="0" armature="0.01" frictionloss="0"/>
                       <geom type="mesh" mesh="R_Hand" contype="1" conaffinity="1"/>
                     </body>
                   </body>
@@ -184,6 +186,16 @@
           </body>
         </body>
       </body>
+    </body>
+    <body pos="0 0 0">
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="-0.893402 1.020099 0.486941" size="0.219912 0.235831 0.01" xyaxes="-0.124045 -0.992274 0.000000 -0.992274 0.124046 0.000000"/>
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="-1.173103 0.052084 0.159000" size="0.445872 0.384688 0.159000" xyaxes="-0.984741 0.174020 0.000000 -0.174020 -0.984741 0.000000"/>
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="-0.663826 1.928809 0.159000" size="1.197230 0.329227 0.159000" xyaxes="-0.990874 0.134786 0.000000 -0.134786 -0.990873 0.000000"/>
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="0.590272 1.369366 0.296444" size="0.821401 0.118748 0.296440" xyaxes="0.138728 0.990330 0.000000 -0.990326 0.138728 0.000000"/>
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="0.060494 1.068744 0.159000" size="0.517774 0.326767 0.159000" xyaxes="0.138728 0.990329 0.000000 -0.990329 0.138729 0.000000"/>
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="-2.001606 0.714887 0.159000" size="0.445872 0.384687 0.159000" xyaxes="-0.990874 0.134786 0.000000 -0.134786 -0.990873 0.000000"/>
+      <geom type="box" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="-0.514652 2.374295 0.296444" size="1.317588 0.133327 0.296440" xyaxes="0.990284 -0.139057 0.000000 0.139056 0.990281 0.000000"/>
+      <geom type="cylinder" friction="1. .1 .1" rgba="1 0.6 0.6 1" condim="1" contype="1" pos="-0.035430 1.657841 1.746205" size="0.165265 0.119201"/>
     </body>
   </worldbody>
   <actuator>

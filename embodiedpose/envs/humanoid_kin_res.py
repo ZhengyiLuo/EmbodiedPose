@@ -179,7 +179,6 @@ class HumanoidKinEnvRes(HumanoidEnv):
         if cc_iter != -1:
             cp_path = '%s/iter_%04d.p' % (cc_cfg.model_dir, cc_iter)
         else:
-            import ipdb; ipdb.set_trace()
             cc_iter = np.max([int(i.split("_")[-1].split(".")[0]) for i in os.listdir(cc_cfg.model_dir)])
             cp_path = '%s/iter_%04d.p' % (cc_cfg.model_dir, cc_iter)
         print(('loading model from checkpoint: %s' % cp_path))

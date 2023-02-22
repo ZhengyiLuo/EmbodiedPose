@@ -240,7 +240,7 @@ if __name__ == "__main__":
     parser.add_argument("--resume", type=str, default=None)
     parser.add_argument("--no_log", action="store_true", default=False)
     parser.add_argument("--debug", action="store_true", default=False)
-    parser.add_argument("--data", type=str, default="proxd")
+    parser.add_argument("--data", type=str, default="sample_data/thirdeye_anns_prox_overlap_no_clip.pkl")
     parser.add_argument("--mode", type=str, default="vis")
     parser.add_argument("--render_rfc", action="store_true", default=False)
     parser.add_argument("--render", action="store_true", default=False)
@@ -283,36 +283,8 @@ if __name__ == "__main__":
     if cfg.smplx and cfg.robot_cfg["model"] == "smplh":
         cfg.robot_cfg["model"] = "smplx"
 
-    cfg.data_specs["train_files_path"] = [('/hdd/zen/data/video_pose/prox/qualitative/singles/thirdeye_anns_proxd_single01.pkl', "scene_pose")]
-
-    # cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_single12.pkl', "scene_pose")]
-    # cfg.data_specs["test_files_path"] = [(
-    #     '/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_overlap.pkl',
-    #     "scene_pose")]
-    if cfg.data == "prox":
-        # cfg.data_specs["test_files_path"] = [(
-        #     '/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_prox_overlap_test.pkl',
-        #     "scene_pose")]
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_prox_overlap_no_clip.pkl', "scene_pose")]
-    elif cfg.data == "proxd":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_overlap_full.pkl', "scene_pose")]
-
-    elif cfg.data == "prox_part":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_overlap.pkl', "scene_pose")]
-    elif cfg.data == "prox_op":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_overlap_op.pkl', "scene_pose")]
-    elif cfg.data == "h36m":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk.p', "scene_pose")]
-    elif cfg.data == "h36m_gt":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_gt_fk.p', "scene_pose")]
-    elif cfg.data == "h36m_part":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk_valid.p', "scene_pose")]
-    elif cfg.data == "panotic":
-        cfg.data_specs["test_files_path"] = [('/hdd/zen/data/video_pose/panotic_go/smpl_processed_full.pkl', "scene_pose")]
-    elif cfg.data.startswith("amass"):
-        cfg.data_specs["test_files_path"] = [(f"/hdd/zen/data/ActBound/AMASS/amass_copycat_take5_train.pkl", "amass")]
-    elif cfg.data.startswith("prox"):
-        cfg.data_specs["test_files_path"] = [(f"/hdd/zen/data/video_pose/prox/qualitative/singles/thirdeye_anns_proxd_single{cfg.data[-2:]}.pkl", "scene_pose")]
+    cfg.data_specs["train_files_path"] = [(cfg.data,"scene_pose")]
+    cfg.data_specs["test_files_path"] = [(cfg.data,"scene_pose")]
 
     if cfg.mode == "vis":
         cfg.num_threads = 1
