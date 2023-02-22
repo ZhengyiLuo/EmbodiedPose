@@ -1,6 +1,12 @@
-> Repo under construction- please keep an eye out for updates!!
-
 # Embodied Scene-aware Human Pose Estimation
+
+> Repo under construction.  
+
+TODOS:
+
+- [x] Code runnable
+- [ ] Training code 
+
 
 [[paper]](https://arxiv.org/abs/2206.09106) [[website]](https://zhengyiluo.github.io/projects/embodied_pose/) [[Video]](https://www.youtube.com/watch?v=8Ae0xzqAtm8)
 
