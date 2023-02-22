@@ -20,7 +20,7 @@ from scipy.spatial.transform import Rotation as sRot
 from collections import defaultdict
 import joblib
 from embodiedpose.models.humor.utils.velocities import estimate_velocities
-from copycat.smpllib.np_smpl_humanoid_batch import Humanoid_Batch
+from uhc.smpllib.np_smpl_humanoid_batch import Humanoid_Batch
 from embodiedpose.models.humor.utils.humor_mujoco import reorder_joints_to_humor, MUJOCO_2_SMPL
 
 humanoid_batch = Humanoid_Batch(data_dir="/hdd/zen/data/SMPL/smpl_models/")
@@ -63,27 +63,17 @@ for k, v in tqdm(h36m_grad.items()):
 
     humanoid_batch.update_model(torch.from_numpy(beta[0:1]), torch.tensor([0]))
     trans_np = (trans_np - full_t) @ full_R - humanoid_batch._offsets[:, 0]
-    pose_aa_np[:, :3] = sRot.from_matrix(
-        np.matmul(full_R.T,
-                  sRot.from_rotvec(
-                      pose_aa_np[:, :3]).as_matrix())).as_rotvec()
+    pose_aa_np[:, :3] = sRot.from_matrix(np.matmul(full_R.T, sRot.from_rotvec(pose_aa_np[:, :3]).as_matrix())).as_rotvec()
 
-    pose_mat = sRot.from_rotvec(pose_aa_np.reshape(B * 24,
-                                                   3)).as_matrix().reshape(
-                                                       B, 24, 3, 3)
+    pose_mat = sRot.from_rotvec(pose_aa_np.reshape(B * 24, 3)).as_matrix().reshape(B, 24, 3, 3)
     pose_body = pose_mat[:, 1:22]
     root_orient = pose_mat[:, 0:1].squeeze()
 
-    input_vecs = np.concatenate([trans_np, pose_aa_np], axis=1)[None, ]
+    input_vecs = np.concatenate([trans_np, pose_aa_np], axis=1)[None,]
     wbpos = humanoid_batch.fk_batch_grad(input_vecs)[..., MUJOCO_2_SMPL, :]
     joints = wbpos.squeeze()[:, :22].reshape(-1, 66)
 
-    trans_vel, joints_vel, root_orient_vel = estimate_velocities(
-        torch.from_numpy(trans_np[None]),
-        torch.from_numpy(root_orient[None]),
-        torch.from_numpy(joints[None, ]),
-        30,
-        aa_to_mat=False)
+    trans_vel, joints_vel, root_orient_vel = estimate_velocities(torch.from_numpy(trans_np[None]), torch.from_numpy(root_orient[None]), torch.from_numpy(joints[None,]), 30, aa_to_mat=False)
     beta_16 = np.concatenate([beta, np.zeros([B, 6])], axis=1)
 
     new_dict[k] = {
@@ -112,9 +102,7 @@ for k, v in tqdm(h36m_grad.items()):
         }
     }
 
-joblib.dump(
-    new_dict,
-    "/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk.p")
+joblib.dump(new_dict, "/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk.p")
 
 # joblib.dump(
 #     new_dict,

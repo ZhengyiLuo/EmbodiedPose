@@ -8,17 +8,15 @@ import joblib
 
 sys.path.append(os.getcwd())
 
-from copycat.smpllib.smpl_robot import Robot
-from copycat.smpllib.torch_smpl_humanoid import Humanoid
+from uhc.smpllib.smpl_robot import Robot
+from uhc.smpllib.torch_smpl_humanoid import Humanoid
 import mujoco_py
 
-from copycat.utils.config_utils.copycat_config import Config as CC_Config
+from uhc.utils.config_utils.copycat_config import Config as CC_Config
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset",
-                        default='lemo',
-                        choices=['lemo', 'prox', 'proxd'])
+    parser.add_argument("--dataset", default='lemo', choices=['lemo', 'prox', 'proxd'])
     args = parser.parse_args()
 
     TRIM_EDGES = 90
@@ -41,9 +39,7 @@ if __name__ == '__main__':
         transl = results['transl']
         seq_length = transl.shape[0] - 2 * TRIM_EDGES
 
-        pose_aa = np.concatenate(
-            (global_orient, body_pose, np.zeros((body_pose.shape[0], 6))),
-            axis=1)
+        pose_aa = np.concatenate((global_orient, body_pose, np.zeros((body_pose.shape[0], 6))), axis=1)
 
         female_subjects_ids = [162, 3452, 159, 3403]
         subject_id = int(result_filepath.split('_')[-2])
@@ -61,8 +57,7 @@ if __name__ == '__main__':
         smpl_dict['trans'] = transl[TRIM_EDGES:-TRIM_EDGES]
         data[seq_name] = smpl_dict
 
-    joblib.dump(data,
-                f'/data/dataset/prox_dataset/{args.dataset}_processed.pkl')
+    joblib.dump(data, f'/data/dataset/prox_dataset/{args.dataset}_processed.pkl')
     print(args.dataset)
     print(len(data.keys()))
     print('Saved')

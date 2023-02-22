@@ -3,13 +3,11 @@ from matplotlib.pyplot import flag
 import torch
 import numpy as np
 
-from copycat.utils.flags import flags
-from copycat.khrylib.utils import (get_angvel_fd, multi_quat_norm,
-                                   multi_quat_diff, quat_mul_vec,
-                                   get_qvel_fd_new, de_heading)
+from uhc.utils.flags import flags
+from uhc.khrylib.utils import (get_angvel_fd, multi_quat_norm, multi_quat_diff, quat_mul_vec, get_qvel_fd_new, de_heading)
 
 from embodiedpose.utils.math_utils import multi_quat_norm_v2, get_angvel_fd, multi_quat_diff
-from copycat.smpllib.smpl_mujoco import qpos_to_smpl
+from uhc.smpllib.smpl_mujoco import qpos_to_smpl
 from embodiedpose.models.humor.numpy_humor_loss import motion_prior_loss, points3d_loss
 from embodiedpose.models.humor.torch_humor_loss import kl_normal
 
@@ -31,8 +29,7 @@ def dynamic_supervision_v1(env, state, action, info):
     cur_wbpos = env.get_wbody_pos().reshape(-1, 3)
     tgt_bquat, tgt_wbpos = env.target['bquat'], env.target['wbpos']
 
-    pose_quat_diff = multi_quat_norm_v2(
-        multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
+    pose_quat_diff = multi_quat_norm_v2(multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
     pose_pos_diff = np.linalg.norm(cur_wbpos - tgt_wbpos, axis=1).mean()
 
     p_reward = math.exp(-k_p * (pose_quat_diff**2))
@@ -43,8 +40,7 @@ def dynamic_supervision_v1(env, state, action, info):
     gt_prev_bquat = env.ar_context['bquat'][ind - 1].flatten()
     prev_bquat = env.prev_bquat
 
-    pose_gt_diff = multi_quat_norm_v2(multi_quat_diff(gt_bquat,
-                                                      cur_bquat)).mean()
+    pose_gt_diff = multi_quat_norm_v2(multi_quat_diff(gt_bquat, cur_bquat)).mean()
 
     cur_bangvel = get_angvel_fd(prev_bquat, cur_bquat, env.dt)
     tgt_bangvel = get_angvel_fd(gt_prev_bquat, gt_bquat, env.dt)
@@ -145,10 +141,7 @@ def dynamic_supervision_v2(env, state, action, info):
     #     np.set_printoptions(precision=4, suppress=1)
     #     print(np.array([hp_reward, hq_reward, hv_reward, p_reward, jp_reward, rp_reward, rq_reward, act_v_reward, act_p_reward]))
 
-    return reward, np.array([
-        hp_reward, hq_reward, hv_reward, p_reward, jp_reward, rp_reward,
-        rq_reward, act_v_reward, act_p_reward
-    ])
+    return reward, np.array([hp_reward, hq_reward, hv_reward, p_reward, jp_reward, rp_reward, rq_reward, act_v_reward, act_p_reward])
 
 
 def dynamic_supervision_v3(env, state, action, info):
@@ -174,8 +167,7 @@ def dynamic_supervision_v3(env, state, action, info):
     hp_reward = math.exp(-k_hp * (hp_dist**2))
 
     # head orientation reward
-    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpos[3:],
-                                                 tgt_hpos[3:])).mean()
+    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpos[3:], tgt_hpos[3:])).mean()
     hq_reward = math.exp(-k_hq * (hq_dist**2))
 
     cur_bquat = env.get_body_quat()
@@ -183,8 +175,7 @@ def dynamic_supervision_v3(env, state, action, info):
     cur_wbpos = env.get_wbody_pos().reshape(-1, 3)
     tgt_bquat, tgt_wbpos = env.target['bquat'], env.target['wbpos']
 
-    pose_quat_diff = multi_quat_norm_v2(
-        multi_quat_diff(cur_bquat, tgt_bquat.flatten())).mean()
+    pose_quat_diff = multi_quat_norm_v2(multi_quat_diff(cur_bquat, tgt_bquat.flatten())).mean()
     pose_pos_diff = np.linalg.norm(cur_wbpos - tgt_wbpos, axis=1).mean()
 
     p_reward = math.exp(-k_p * (pose_quat_diff**2))
@@ -200,10 +191,8 @@ def dynamic_supervision_v3(env, state, action, info):
     prev_bquat = env.prev_bquat
 
     rp_dist = np.linalg.norm(tgt_qpos[:3] - act_qpos[:3])
-    rq_dist = multi_quat_norm_v2(multi_quat_diff(tgt_qpos[3:7],
-                                                 act_qpos[3:7])).mean()
-    pose_action_diff = multi_quat_norm_v2(multi_quat_diff(
-        tgt_bquat, act_bquat)).mean()
+    rq_dist = multi_quat_norm_v2(multi_quat_diff(tgt_qpos[3:7], act_qpos[3:7])).mean()
+    pose_action_diff = multi_quat_norm_v2(multi_quat_diff(tgt_bquat, act_bquat)).mean()
 
     cur_bangvel = get_angvel_fd(prev_bquat, cur_bquat, env.dt)
     tgt_bangvel = get_angvel_fd(tgt_prev_bquat, tgt_bquat, env.dt)
@@ -223,10 +212,7 @@ def dynamic_supervision_v3(env, state, action, info):
     # np.set_printoptions(precision=4, suppress=1)
     # print(reward, np.array([hp_reward, hq_reward, p_reward, jp_reward, rp_reward, rq_reward, act_p_reward, act_v_reward]))
 
-    return reward, np.array([
-        hp_reward, hq_reward, p_reward, jp_reward, rp_reward, rq_reward,
-        act_p_reward, act_v_reward
-    ])
+    return reward, np.array([hp_reward, hq_reward, p_reward, jp_reward, rp_reward, rq_reward, act_p_reward, act_v_reward])
 
 
 def dynamic_supervision_v4(env, state, action, info):
@@ -253,8 +239,7 @@ def dynamic_supervision_v4(env, state, action, info):
     hp_reward = math.exp(-k_hp * (hp_dist**2))
 
     # head orientation reward
-    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpose[3:],
-                                                 tgt_hpose[3:])).mean()
+    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpose[3:], tgt_hpose[3:])).mean()
     hq_reward = math.exp(-k_hq * (hq_dist**2))
 
     # head velocity reward
@@ -267,8 +252,7 @@ def dynamic_supervision_v4(env, state, action, info):
     cur_wbpos = env.get_wbody_pos().reshape(-1, 3)
     tgt_bquat, tgt_wbpos = env.target['bquat'], env.target['wbpos']
 
-    pose_quat_diff = multi_quat_norm_v2(
-        multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
+    pose_quat_diff = multi_quat_norm_v2(multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
     pose_pos_diff = np.linalg.norm(cur_wbpos - tgt_wbpos, axis=1).mean()
 
     p_reward = math.exp(-k_p * (pose_quat_diff**2))
@@ -280,8 +264,7 @@ def dynamic_supervision_v4(env, state, action, info):
     # np.set_printoptions(precision=4, suppress=1)
     # print(np.array([hp_reward, hq_reward, hv_reward, p_reward, jp_reward, rp_reward, rq_reward, act_p_reward]))
 
-    return reward, np.array(
-        [hp_reward, hq_reward, hv_reward, p_reward, jp_reward])
+    return reward, np.array([hp_reward, hq_reward, hv_reward, p_reward, jp_reward])
 
 
 def dynamic_supervision_v5(env, state, action, info):
@@ -308,8 +291,7 @@ def dynamic_supervision_v5(env, state, action, info):
     hp_reward = math.exp(-k_hp * (hp_dist**2))
 
     # head orientation reward
-    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpose[3:],
-                                                 tgt_hpose[3:])).mean()
+    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpose[3:], tgt_hpose[3:])).mean()
     hq_reward = math.exp(-k_hq * (hq_dist**2))
 
     # head velocity reward
@@ -322,8 +304,7 @@ def dynamic_supervision_v5(env, state, action, info):
     cur_wbpos = env.get_wbody_pos().reshape(-1, 3)
     tgt_bquat, tgt_wbpos = env.target['bquat'], env.target['wbpos']
 
-    pose_quat_diff = multi_quat_norm_v2(
-        multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
+    pose_quat_diff = multi_quat_norm_v2(multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
     pose_pos_diff = np.linalg.norm(cur_wbpos - tgt_wbpos, axis=1).mean()
 
     p_reward = math.exp(-k_p * (pose_quat_diff**2))
@@ -335,8 +316,7 @@ def dynamic_supervision_v5(env, state, action, info):
     # np.set_printoptions(precision=4, suppress=1)
     # print(np.array([hp_reward, hq_reward, hv_reward, p_reward, jp_reward, rp_reward, rq_reward, act_p_reward]))
 
-    return reward, np.array(
-        [hp_reward, hq_reward, hv_reward, p_reward, jp_reward])
+    return reward, np.array([hp_reward, hq_reward, hv_reward, p_reward, jp_reward])
 
 
 def dynamic_supervision_v6(env, state, action, info):
@@ -361,16 +341,14 @@ def dynamic_supervision_v6(env, state, action, info):
     hp_reward = math.exp(-k_hp * (hp_dist**2))
 
     # head orientation reward
-    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpose[3:],
-                                                 tgt_hpose[3:])).mean()
+    hq_dist = multi_quat_norm_v2(multi_quat_diff(cur_hpose[3:], tgt_hpose[3:])).mean()
     hq_reward = math.exp(-k_hq * (hq_dist**2))
 
     cur_bquat = env.get_body_quat()
     cur_wbpos = env.get_wbody_pos().reshape(-1, 3)
     tgt_bquat, tgt_wbpos = env.target['bquat'], env.target['wbpos']
 
-    pose_quat_diff = multi_quat_norm_v2(
-        multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
+    pose_quat_diff = multi_quat_norm_v2(multi_quat_diff(cur_bquat.flatten(), tgt_bquat.flatten())).mean()
     pose_pos_diff = np.linalg.norm(cur_wbpos - tgt_wbpos, axis=1).mean()
 
     p_reward = math.exp(-k_p * (pose_quat_diff**2))
@@ -393,8 +371,7 @@ def dynamic_supervision_v6(env, state, action, info):
     #     np.set_printoptions(precision=4, suppress=1)
     #     print(reward, np.array([p_reward, jp_reward, act_v_reward]))
 
-    return reward, np.array(
-        [hp_reward, hq_reward, p_reward, jp_reward, act_v_reward])
+    return reward, np.array([hp_reward, hq_reward, p_reward, jp_reward, act_v_reward])
 
 
 def reprojection_reward(env, state, action, info):
@@ -421,15 +398,12 @@ def reprojection_reward(env, state, action, info):
     # data from env
     ind = env.cur_t
     prev_bquat = env.prev_bquat
-    bm, smpl2op_map, aR, atr, R, tr, K = env.bm, env.smpl2op_map, env.camera_params[
-        'aR'], env.camera_params['atr'], env.camera_params[
-            'R'], env.camera_params['tr'], env.camera_params['K']
+    bm, smpl2op_map, aR, atr, R, tr, K = env.bm, env.smpl2op_map, env.camera_params['aR'], env.camera_params['atr'], env.camera_params['R'], env.camera_params['tr'], env.camera_params['K']
     betas = torch.from_numpy(env.context_dict['beta'][0:1])
 
     # 2D reprojection reward
     qpos = env.data.qpos.copy()[None]
-    pose_aa, trans = qpos_to_smpl(qpos, env.smpl_model,
-                                  env.cc_cfg.robot_cfg.get("model", "smpl"))
+    pose_aa, trans = qpos_to_smpl(qpos, env.smpl_model, env.cc_cfg.robot_cfg.get("model", "smpl"))
     pose_aa = pose_aa[:, :22].reshape((-1, 22 * 3))
     root_orient = pose_aa[:, :3]
     pose_body = pose_aa[:, 3:]
@@ -438,11 +412,7 @@ def reprojection_reward(env, state, action, info):
     root_orient = torch.from_numpy(root_orient).float()
     trans = torch.from_numpy(trans).float()
 
-    pred_body = bm(pose_body=pose_body,
-                   pose_hand=None,
-                   betas=betas,
-                   root_orient=root_orient,
-                   trans=trans)
+    pred_body = bm(pose_body=pose_body, pose_hand=None, betas=betas, root_orient=root_orient, trans=trans)
 
     pred_joints3d = pred_body.Jtr.numpy()
     pred_joints3d = pred_joints3d.reshape(1, -1, 3)
@@ -489,9 +459,7 @@ def reprojection_reward3d(env, state, action, info):
         ws.get("k_pc", 0.01),
     )
 
-    bm, smpl2op_map, aR, atr, R, tr, K = env.bm, env.smpl2op_map, env.camera_params[
-        'aR'], env.camera_params['atr'], env.camera_params[
-            'R'], env.camera_params['tr'], env.camera_params['K']
+    bm, smpl2op_map, aR, atr, R, tr, K = env.bm, env.smpl2op_map, env.camera_params['aR'], env.camera_params['atr'], env.camera_params['R'], env.camera_params['tr'], env.camera_params['K']
     curr_humor_state = env.cur_humor_state
     betas = torch.from_numpy(env.context_dict['beta'][0:1])
 
@@ -510,8 +478,7 @@ def reprojection_reward3d(env, state, action, info):
 
     # 2D reprojection reward
     qpos = env.data.qpos.copy()[None]
-    pose_aa, trans = qpos_to_smpl(qpos, env.smpl_model,
-                                  env.cc_cfg.robot_cfg.get("model", "smpl"))
+    pose_aa, trans = qpos_to_smpl(qpos, env.smpl_model, env.cc_cfg.robot_cfg.get("model", "smpl"))
     pose_aa = pose_aa[:, :22].reshape((-1, 22 * 3))
     root_orient = pose_aa[:, :3]
     pose_body = pose_aa[:, 3:]
@@ -557,8 +524,7 @@ def reprojection_reward3d(env, state, action, info):
     com_reward = math.exp(-k_c * (com_dist**2))
 
     # overall reward
-    reward = (w_p * pose_reward + w_e * ee_reward + w_c * com_reward +
-              w_kp * kp_reward)
+    reward = (w_p * pose_reward + w_e * ee_reward + w_c * com_reward + w_kp * kp_reward)
     reward /= w_p + w_e + w_c + w_kp
 
     # if flags.debug:
@@ -598,8 +564,7 @@ def reprojection_reward3d_gt(env, state, action, info):
 
     # 2D reprojection reward
     qpos = env.data.qpos.copy()[None]
-    pose_aa, trans = qpos_to_smpl(qpos, env.smpl_model,
-                                  env.cc_cfg.robot_cfg.get("model", "smpl"))
+    pose_aa, trans = qpos_to_smpl(qpos, env.smpl_model, env.cc_cfg.robot_cfg.get("model", "smpl"))
     pose_aa = pose_aa[:, :22].reshape((-1, 22 * 3))
 
     pred_joints2d = curr_humor_state['pred_joints2d'].squeeze()
@@ -656,16 +621,11 @@ def reprojection_reward3d_gt(env, state, action, info):
     gt_com_reward = math.exp(-k_c * (gt_com_dist**2))
 
     # overall reward
-    reward = (w_p * pose_reward + w_e * ee_reward + w_c * com_reward +
-              w_p_gt * gt_pose_reward + w_e_gt * gt_ee_reward +
-              w_c_gt * gt_com_reward + w_kp * kp_reward)
+    reward = (w_p * pose_reward + w_e * ee_reward + w_c * com_reward + w_p_gt * gt_pose_reward + w_e_gt * gt_ee_reward + w_c_gt * gt_com_reward + w_kp * kp_reward)
     reward /= w_p + w_e + w_c + w_p_gt + w_e_gt + w_c_gt + w_kp
     assert (w_p + w_e + w_c + w_p_gt + w_e_gt + w_c_gt + w_kp == 1)
 
-    return reward, np.array([
-        pose_reward, ee_reward, com_reward, gt_pose_reward, gt_ee_reward,
-        gt_com_reward, kp_reward
-    ])
+    return reward, np.array([pose_reward, ee_reward, com_reward, gt_pose_reward, gt_ee_reward, gt_com_reward, kp_reward])
 
 
 reward_func = {

@@ -8,7 +8,7 @@ from collections import defaultdict
 import torch
 import random
 import math
-from copycat.data_loaders.dataset_batch import DatasetBatch
+from uhc.data_loaders.dataset_batch import DatasetBatch
 from embodiedpose.models.humor.utils.humor_mujoco import SMPL_2_OP, OP_14_to_OP_12
 from scipy.ndimage import gaussian_filter1d
 
@@ -24,8 +24,7 @@ def positionalencoding1d(d_model, length):
                          "odd dim (got dim={:d})".format(d_model))
     pe = torch.zeros(length, d_model)
     position = torch.arange(0, length).unsqueeze(1)
-    div_term = torch.exp((torch.arange(0, d_model, 2, dtype=torch.float) *
-                          -(math.log(10000.0) / d_model)))
+    div_term = torch.exp((torch.arange(0, d_model, 2, dtype=torch.float) * -(math.log(10000.0) / d_model)))
     pe[:, 0::2] = torch.sin(position.float() * div_term)
     pe[:, 1::2] = torch.cos(position.float() * div_term)
 
@@ -36,13 +35,9 @@ def fill_zeros_with_last(arr, initial=0):
     ind = np.nonzero(arr[:, 2])[0]
     cnt = np.cumsum(np.array(arr[:, 2], dtype=bool))
 
-
-    stack = np.stack([
-        np.where(cnt, arr[ind[cnt - 1], 0], initial),
-        np.where(cnt, arr[ind[cnt - 1], 1], initial), arr[:, 2]
-    ],
-                    axis=1)
+    stack = np.stack([np.where(cnt, arr[ind[cnt - 1], 0], initial), np.where(cnt, arr[ind[cnt - 1], 1], initial), arr[:, 2]], axis=1)
     return stack
+
 
 def filter_2d_kps(j2d, sigma=1):
     new_j2d = []
@@ -61,6 +56,7 @@ def filter_2d_kps(j2d, sigma=1):
 
 
 class ScenePoseDataset(DatasetBatch):
+
     def __init__(self, *args, **kwargs):
         super(ScenePoseDataset, self).__init__(*args, **kwargs)
 
@@ -80,17 +76,7 @@ class ScenePoseDataset(DatasetBatch):
 
         return processed_data, raw_data
 
-    def get_sample_from_key(self,
-                            take_key,
-                            full_sample=False,
-                            freq_dict=None,
-                            fr_start=-1,
-                            fr_num=-1,
-                            precision_mode=False,
-                            sampling_freq=0.75,
-                            full_fr_num=False,
-                            return_batch=False,
-                            exclude_keys=[]):
+    def get_sample_from_key(self, take_key, full_sample=False, freq_dict=None, fr_start=-1, fr_num=-1, precision_mode=False, sampling_freq=0.75, full_fr_num=False, return_batch=False, exclude_keys=[]):
         sample = super().get_sample_from_key(
             take_key,
             full_sample=full_sample,
@@ -120,14 +106,12 @@ class ScenePoseDataset(DatasetBatch):
             # data_processed["joints2d"][take] = curr_data["joints2d"][:, SMPL_2_OP][..., OP_14_to_OP_12, :]
             data_processed["joints2d"][take] = filter_2d_kps(curr_data["joints2d"][:, SMPL_2_OP][..., OP_14_to_OP_12, :])
 
-
             data_processed["pose_6d"][take] = curr_data["pose_6d"]
             data_processed["pose_aa"][take] = curr_data["pose_aa"]
 
             data_processed["trans"][take] = curr_data["trans"]
             data_processed["root_orient"][take] = curr_data["root_orient"]
             data_processed["joints"][take] = curr_data["joints"]
-
 
             data_processed["trans_vel"][take] = curr_data["trans_vel"]
             data_processed["root_orient_vel"][take] = curr_data["root_orient_vel"]
@@ -139,8 +123,7 @@ class ScenePoseDataset(DatasetBatch):
             if "joints_gt" in curr_data:
                 data_processed["joints_gt"][take] = curr_data["joints_gt"]
 
-            data_processed["phase"][take] = positionalencoding1d(
-                32, seq_len).numpy()
+            data_processed["phase"][take] = positionalencoding1d(32, seq_len).numpy()
             data_processed["time"][take] = np.arange(seq_len)[:, None]
 
             if "qpos" in curr_data:
@@ -148,14 +131,12 @@ class ScenePoseDataset(DatasetBatch):
 
             # data_processed["qpos"][take] = curr_data["qpos"]
             data_processed["beta"][take] = (np.repeat(
-                curr_data["betas"][None, ],
+                curr_data["betas"][None,],
                 seq_len,
                 axis=0,
-            ) if curr_data["betas"].shape[0] != seq_len else
-                                            curr_data["betas"])
+            ) if curr_data["betas"].shape[0] != seq_len else curr_data["betas"])
 
-            gender = (curr_data["gender"].item() if isinstance(
-                curr_data["gender"], np.ndarray) else curr_data["gender"])
+            gender = (curr_data["gender"].item() if isinstance(curr_data["gender"], np.ndarray) else curr_data["gender"])
 
             if isinstance(gender, bytes):
                 gender = gender.decode("utf-8")

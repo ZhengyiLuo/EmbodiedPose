@@ -9,12 +9,13 @@ import torch
 import random
 import math
 
-from copycat.data_loaders.dataset_batch import DatasetBatch
-from copycat.smpllib.smpl_mujoco import smplh_to_smpl
-import copycat.utils.pytorch3d_transforms as tR
+from uhc.data_loaders.dataset_batch import DatasetBatch
+from uhc.smpllib.smpl_mujoco import smplh_to_smpl
+import uhc.utils.pytorch3d_transforms as tR
 
 
 class AMASSDatasetMulti(DatasetBatch):
+
     def process_data_list(self, data_list):
         data_processed = defaultdict(dict)
         # pbar = tqdm(all_data)
@@ -27,31 +28,20 @@ class AMASSDatasetMulti(DatasetBatch):
                 continue
             # data_processed["pose_6d"][take] = curr_data["pose_6d"].reshape(
             #     seq_len, -1)
-            data_processed["pose_aa"][take] = curr_data["pose_aa"].reshape(
-                seq_len, -1)
+            data_processed["pose_aa"][take] = curr_data["pose_aa"].reshape(seq_len, -1)
 
-            data_processed["trans"][take] = curr_data["trans"].reshape(
-                seq_len, -1)
+            data_processed["trans"][take] = curr_data["trans"].reshape(seq_len, -1)
 
-            data_processed["beta"][take] = np.repeat(
-                curr_data["beta"][None, ], seq_len, axis=0
-            ) if curr_data["beta"].shape[0] != seq_len else curr_data["beta"]
+            data_processed["beta"][take] = np.repeat(curr_data["beta"][None,], seq_len, axis=0) if curr_data["beta"].shape[0] != seq_len else curr_data["beta"]
 
             pose_aa_torch = torch.from_numpy(curr_data["pose_aa"])
-            pose_mat_torch = tR.axis_angle_to_matrix(
-                pose_aa_torch[:, :66].reshape(-1, 3)).numpy().reshape(
-                    seq_len, -1, 3, 3)
+            pose_mat_torch = tR.axis_angle_to_matrix(pose_aa_torch[:, :66].reshape(-1, 3)).numpy().reshape(seq_len, -1, 3, 3)
 
-            data_processed["root_orient"][take] = pose_mat_torch[:,
-                                                                 0:1].reshape(
-                                                                     seq_len,
-                                                                     -1)
-            data_processed["pose_body"][take] = pose_mat_torch[:, 1:].reshape(
-                seq_len, -1)
+            data_processed["root_orient"][take] = pose_mat_torch[:, 0:1].reshape(seq_len, -1)
+            data_processed["pose_body"][take] = pose_mat_torch[:, 1:].reshape(seq_len, -1)
 
             if "gender" in curr_data:
-                gender = (curr_data["gender"].item() if isinstance(
-                    curr_data["gender"], np.ndarray) else curr_data["gender"])
+                gender = (curr_data["gender"].item() if isinstance(curr_data["gender"], np.ndarray) else curr_data["gender"])
             else:
                 gender = "neutral"
 
@@ -81,52 +71,18 @@ class AMASSDatasetMulti(DatasetBatch):
 
         return data_processed
 
-    def get_sample_from_keys(self,
-                             take_keys,
-                             full_sample=False,
-                             freq_dict=None,
-                             fr_start=-1,
-                             fr_num=-1,
-                             precision_mode=False,
-                             sampling_freq=0.75,
-                             return_batch=False,
-                             exclude_keys=[]):
+    def get_sample_from_keys(self, take_keys, full_sample=False, freq_dict=None, fr_start=-1, fr_num=-1, precision_mode=False, sampling_freq=0.75, return_batch=False, exclude_keys=[]):
         samples = []
         for take_key in take_keys:
-            sample = super().get_sample_from_key(take_key,
-                                                 full_sample=full_sample,
-                                                 freq_dict=freq_dict,
-                                                 fr_start=fr_start,
-                                                 fr_num=fr_num,
-                                                 precision_mode=precision_mode,
-                                                 sampling_freq=sampling_freq,
-                                                 return_batch=return_batch,
-                                                 exclude_keys=['obj_info'])
+            sample = super().get_sample_from_key(take_key, full_sample=full_sample, freq_dict=freq_dict, fr_start=fr_start, fr_num=fr_num, precision_mode=precision_mode, sampling_freq=sampling_freq, return_batch=return_batch, exclude_keys=['obj_info'])
 
             if take_key in self.data["obj_info"]:
                 sample['obj_info'] = self.data["obj_info"][take_key]
             samples.append(sample)
         return samples
 
-    def get_sample_from_key(self,
-                            take_key,
-                            full_sample=False,
-                            freq_dict=None,
-                            fr_start=-1,
-                            fr_num=-1,
-                            precision_mode=False,
-                            sampling_freq=0.75,
-                            return_batch=False,
-                            exclude_keys=[]):
-        sample = super().get_sample_from_key(take_key,
-                                             full_sample=full_sample,
-                                             freq_dict=freq_dict,
-                                             fr_start=fr_start,
-                                             fr_num=fr_num,
-                                             precision_mode=precision_mode,
-                                             sampling_freq=sampling_freq,
-                                             return_batch=return_batch,
-                                             exclude_keys=['obj_info'])
+    def get_sample_from_key(self, take_key, full_sample=False, freq_dict=None, fr_start=-1, fr_num=-1, precision_mode=False, sampling_freq=0.75, return_batch=False, exclude_keys=[]):
+        sample = super().get_sample_from_key(take_key, full_sample=full_sample, freq_dict=freq_dict, fr_start=fr_start, fr_num=fr_num, precision_mode=precision_mode, sampling_freq=sampling_freq, return_batch=return_batch, exclude_keys=['obj_info'])
 
         if take_key in self.data["obj_info"]:
             sample['obj_info'] = self.data["obj_info"][take_key]
@@ -146,19 +102,12 @@ class AMASSDatasetMulti(DatasetBatch):
     ):
         samples = []
         for i in range(num_people):
-            if freq_dict is None or len(freq_dict.keys()) != len(
-                    self.data_keys):
+            if freq_dict is None or len(freq_dict.keys()) != len(self.data_keys):
                 self.curr_key = curr_key = random.choice(self.sample_keys)
             else:
-                init_probs = np.exp(-np.array([
-                    ewma(np.array(freq_dict[k])[:, 0] == 1)
-                    if len(freq_dict[k]) > 0 else 0 for k in freq_dict.keys()
-                ]) / sampling_temp)
+                init_probs = np.exp(-np.array([ewma(np.array(freq_dict[k])[:, 0] == 1) if len(freq_dict[k]) > 0 else 0 for k in freq_dict.keys()]) / sampling_temp)
                 init_probs = init_probs / init_probs.sum()
-                self.curr_key = curr_key = (np.random.choice(
-                    self.data_keys, p=init_probs) if np.random.binomial(
-                        1, sampling_freq) else np.random.choice(
-                            self.data_keys))
+                self.curr_key = curr_key = (np.random.choice(self.data_keys, p=init_probs) if np.random.binomial(1, sampling_freq) else np.random.choice(self.data_keys))
             curr_pose_aa = self.data["pose_aa"][self.curr_key]
             seq_len = curr_pose_aa.shape[0]
 
@@ -166,13 +115,5 @@ class AMASSDatasetMulti(DatasetBatch):
             fr_start = 0
             fr_num = 300
 
-            samples.append(
-                self.get_sample_from_key(self.curr_key,
-                                         full_sample=full_sample,
-                                         precision_mode=precision_mode,
-                                         fr_num=fr_num,
-                                         freq_dict=freq_dict,
-                                         sampling_freq=sampling_freq,
-                                         return_batch=return_batch,
-                                         fr_start=fr_start))
+            samples.append(self.get_sample_from_key(self.curr_key, full_sample=full_sample, precision_mode=precision_mode, fr_num=fr_num, freq_dict=freq_dict, sampling_freq=sampling_freq, return_batch=return_batch, fr_start=fr_start))
         return samples

@@ -27,7 +27,7 @@ sys.path.append(os.getcwd())
 import torch
 import numpy as np
 
-from copycat.utils.flags import flags
+from uhc.utils.flags import flags
 import wandb
 
 from embodiedpose.agents import agent_dict
@@ -63,8 +63,7 @@ if __name__ == "__main__":
 
     if args.render:
         args.num_threads = 1
-    cfg = Config(cfg_id=args.cfg,
-                 create_dirs=not (args.render or args.epoch > 0))
+    cfg = Config(cfg_id=args.cfg, create_dirs=not (args.render or args.epoch > 0))
 
     if args.debug:
         args.num_threads = 1
@@ -73,10 +72,7 @@ if __name__ == "__main__":
         #     "/hdd/zen/data/ActBound/AMASS/amass_copycat_take5_test.pkl",
         #     "amass"
         # ]]
-        cfg.get("data_specs", {})["train_files_path"] = [[
-            "/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_gt_fk.p",
-            "scene_pose"
-        ]]
+        cfg.get("data_specs", {})["train_files_path"] = [["/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_gt_fk.p", "scene_pose"]]
 
     cfg.update(args)
     flags.debug = args.debug
@@ -95,8 +91,7 @@ if __name__ == "__main__":
 
     dtype = torch.float64
     torch.set_default_dtype(dtype)
-    device = (torch.device("cuda", index=args.gpu_index)
-              if torch.cuda.is_available() else torch.device("cpu"))
+    device = (torch.device("cuda", index=args.gpu_index) if torch.cuda.is_available() else torch.device("cpu"))
     if torch.cuda.is_available():
         torch.cuda.set_device(args.gpu_index)
     np.random.seed(cfg.seed)

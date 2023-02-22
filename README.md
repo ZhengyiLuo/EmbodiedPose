@@ -26,3 +26,12 @@ mkdir ~/.mujoco
 mv mujoco210 ~/.mujoco/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.mujoco/mujoco210/bin
 ```
+
+3. Download and install Universal Humanoid Controller Locally and follow the instructions to setup the data. Make sure you have UHC running locally before proceeding:
+
+```
+git clone git@github.com:ZhengyiLuo/UniversalHumanoidControl.git 
+cd UniversalHumanoidControl
+pip install -e .
+```
+

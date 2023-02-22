@@ -16,10 +16,10 @@ import numpy as np
 import mujoco_py
 from mujoco_py import load_model_from_path, load_model_from_xml, MjSim, MjViewer
 
-from copycat.smpllib.smpl_robot import Robot
+from uhc.smpllib.smpl_robot import Robot
 from lxml import etree
 from lxml.etree import XMLParser, parse, ElementTree, Element, SubElement
-from copycat.utils.config_utils.copycat_config import Config as CC_Config
+from uhc.utils.config_utils.copycat_config import Config as CC_Config
 from copy import deepcopy
 import shutil
 
@@ -30,18 +30,14 @@ from embodiedpose.models.implicit_sdfs import SphereSDF_F, BoxSDF_F, TorusSDF_F,
 from embodiedpose.models.implicit_sdfs_np import SphereSDF_N, BoxSDF_N, TorusSDF_N, CylinderSDF_N, CylinderSDF_N
 from autograd import elementwise_grad as egrad
 from autograd import grad
-from copycat.utils.math_utils import get_heading_new
-from embodiedpose.models.humor.utils.transforms import (
-    compute_world2aligned_mat, rotation_matrix_to_angle_axis)
+from uhc.utils.math_utils import get_heading_new
+from embodiedpose.models.humor.utils.transforms import (compute_world2aligned_mat, rotation_matrix_to_angle_axis)
 from scipy.ndimage import zoom
 
 
 class SceneRobot(Robot):
-    def load_from_skeleton(self,
-                           betas=None,
-                           gender=[0],
-                           scene_and_key=None,
-                           obj_info=None):
+
+    def load_from_skeleton(self, betas=None, gender=[0], scene_and_key=None, obj_info=None):
         super().load_from_skeleton(betas=betas, gender=gender)
         self.scene_sdfs = []
         self.scene_sdfs_np = []
@@ -54,28 +50,20 @@ class SceneRobot(Robot):
             # For adding scene through obj_info (h36m)
             self.add_obj(obj_info)
 
-        self.scene_sdfs.append(
-            BoxSDF_F(trans=[0, 0, -0.5],
-                     orientation=np.eye(3),
-                     side_lengths=np.array([1000, 1000, 1])))  ## Adding ground
-        self.scene_sdfs_np.append(
-            BoxSDF_N(trans=np.array([0, 0, -0.5]),
-                     orientation=np.eye(3),
-                     side_lengths=np.array([1000, 1000, 1])))  ## Adding ground
-        self.create_voxel_field(span = self.cfg.get('span', 1.8))
+        self.scene_sdfs.append(BoxSDF_F(trans=[0, 0, -0.5], orientation=np.eye(3), side_lengths=np.array([1000, 1000, 1])))  ## Adding ground
+        self.scene_sdfs_np.append(BoxSDF_N(trans=np.array([0, 0, -0.5]), orientation=np.eye(3), side_lengths=np.array([1000, 1000, 1])))  ## Adding ground
+        self.create_voxel_field(span=self.cfg.get('span', 1.8))
 
     def query_voxel(self, root_pos, root_mat, res=8):
-        world2local = compute_world2aligned_mat(root_mat[None, ]).float()
-        new_pts = torch.matmul(self.grid_points,
-                               world2local.float()) + root_pos.float()
+        world2local = compute_world2aligned_mat(root_mat[None,]).float()
+        new_pts = torch.matmul(self.grid_points, world2local.float()) + root_pos.float()
         # new_pts = torch.matmul(self.grid_points, root_mat.T) + root_pos
         # new_pts = self.grid_points + root_pos
         occ = self.get_sdf_np(new_pts)
         occ = occ.reshape(self.vox_res, self.vox_res, self.vox_res)
 
         if res == 8:
-            occ = -self.pool2d(-occ[None, ]).numpy().squeeze(
-            )  # sdf is negative. Need to min pool
+            occ = -self.pool2d(-occ[None,]).numpy().squeeze()  # sdf is negative. Need to min pool
         else:
             occ = occ.numpy()
 
@@ -84,15 +72,10 @@ class SceneRobot(Robot):
     def create_voxel_field(self, fine_res=16, coarse_res=16, span=1.8):
         self.vox_res = fine_res
 
-        size_range = torch.arange(0, fine_res + 1, fine_res /(fine_res - 1)) / (fine_res / span) - span/2
+        size_range = torch.arange(0, fine_res + 1, fine_res / (fine_res - 1)) / (fine_res / span) - span / 2
         x = size_range
         grid_x, grid_y, grid_z = torch.meshgrid(x, x, x)
-        self.grid_points = torch.cat([
-            grid_x.reshape(-1, 1),
-            grid_y.reshape(-1, 1),
-            grid_z.reshape(-1, 1)
-        ],
-                                     dim=1).float()
+        self.grid_points = torch.cat([grid_x.reshape(-1, 1), grid_y.reshape(-1, 1), grid_z.reshape(-1, 1)], dim=1).float()
         self.pool2d = torch.nn.MaxPool3d(2, stride=2)
 
     def get_sdf(self, points, topk=1, return_grad=False):
@@ -103,15 +86,13 @@ class SceneRobot(Robot):
 
             for sdf in self.scene_sdfs:
                 if return_grad:
-                    points = torch.autograd.Variable(points,
-                                                     requires_grad=True)
+                    points = torch.autograd.Variable(points, requires_grad=True)
 
                     with torch.enable_grad():
                         dist = sdf(points)
                         loss = (dist - 0).sum()
                         loss.backward()
-                        dir = -points.grad / torch.norm(points.grad,
-                                                        dim=1)[:, None]
+                        dir = -points.grad / torch.norm(points.grad, dim=1)[:, None]
                         dirs.append(dir)
                 else:
                     dist = sdf(points)
@@ -120,41 +101,21 @@ class SceneRobot(Robot):
             dists = torch.cat(dists, dim=1)
 
             if return_grad:
-                dirs = torch.cat(dirs, dim=1).reshape(-1, len(self.scene_sdfs),
-                                                      3)
+                dirs = torch.cat(dirs, dim=1).reshape(-1, len(self.scene_sdfs), 3)
                 dirs = torch.nan_to_num(dirs)
 
             if len(self.scene_sdfs) < topk:
 
-                vals, locs = torch.topk(dists,
-                                        k=len(self.scene_sdfs),
-                                        largest=False)
-                vals = torch.cat([
-                    vals,
-                    torch.ones([vals.shape[0], topk - len(self.scene_sdfs)]) *
-                    (-1)
-                ],
-                                 dim=1)
+                vals, locs = torch.topk(dists, k=len(self.scene_sdfs), largest=False)
+                vals = torch.cat([vals, torch.ones([vals.shape[0], topk - len(self.scene_sdfs)]) * (-1)], dim=1)
                 if return_grad:
-                    dirs = torch.cat([
-                        dirs[idx][loc][None, ] for idx, loc in enumerate(locs)
-                    ],
-                                     dim=0)
-                    dirs = torch.cat([
-                        dirs,
-                        torch.ones(
-                            [vals.shape[0], topk - len(self.scene_sdfs), 3]) *
-                        (-1)
-                    ],
-                                     dim=1)
+                    dirs = torch.cat([dirs[idx][loc][None,] for idx, loc in enumerate(locs)], dim=0)
+                    dirs = torch.cat([dirs, torch.ones([vals.shape[0], topk - len(self.scene_sdfs), 3]) * (-1)], dim=1)
 
             else:
                 vals, locs = torch.topk(dists, k=topk, largest=False)
                 if return_grad:
-                    dirs = torch.cat([
-                        dirs[idx][loc][None, ] for idx, loc in enumerate(locs)
-                    ],
-                                     dim=0)
+                    dirs = torch.cat([dirs[idx][loc][None,] for idx, loc in enumerate(locs)], dim=0)
 
         else:
             vals = torch.ones([points.shape[0], topk]) * (-1)
@@ -186,9 +147,7 @@ class SceneRobot(Robot):
             dists = np.concatenate(dists, axis=1)
 
             if return_grad:
-                dirs = np.concatenate(dirs,
-                                      axis=1).reshape(-1, len(self.scene_sdfs),
-                                                      3)
+                dirs = np.concatenate(dirs, axis=1).reshape(-1, len(self.scene_sdfs), 3)
                 dirs = torch.from_numpy(dirs)
                 dirs = torch.nan_to_num(dirs)
 
@@ -197,34 +156,16 @@ class SceneRobot(Robot):
 
             if len(self.scene_sdfs) < topk:
 
-                vals, locs = torch.topk(dists,
-                                        k=len(self.scene_sdfs),
-                                        largest=False)
-                vals = torch.cat([
-                    vals,
-                    torch.ones([vals.shape[0], topk - len(self.scene_sdfs)]) *
-                    (-1)
-                ],
-                                 dim=1)
+                vals, locs = torch.topk(dists, k=len(self.scene_sdfs), largest=False)
+                vals = torch.cat([vals, torch.ones([vals.shape[0], topk - len(self.scene_sdfs)]) * (-1)], dim=1)
                 if return_grad:
-                    dirs = torch.cat([
-                        dirs[idx][loc][None, ] for idx, loc in enumerate(locs)
-                    ],
-                                     dim=0)
-                    dirs = torch.cat([
-                        dirs,
-                        torch.zeros(
-                            [vals.shape[0], topk - len(self.scene_sdfs), 3])
-                    ],
-                                     dim=1)
+                    dirs = torch.cat([dirs[idx][loc][None,] for idx, loc in enumerate(locs)], dim=0)
+                    dirs = torch.cat([dirs, torch.zeros([vals.shape[0], topk - len(self.scene_sdfs), 3])], dim=1)
 
             else:
                 vals, locs = torch.topk(dists, k=topk, largest=False)
                 if return_grad:
-                    dirs = torch.cat([
-                        dirs[idx][loc][None, ] for idx, loc in enumerate(locs)
-                    ],
-                                     dim=0)
+                    dirs = torch.cat([dirs[idx][loc][None,] for idx, loc in enumerate(locs)], dim=0)
 
         else:
             vals = torch.ones([points.shape[0], topk]) * (-1)
@@ -247,15 +188,13 @@ class SceneRobot(Robot):
             body_node = Element("body", {"pos": "0 0 0"})
             for geom in geoms:
                 geom_pos = np.array([float(i) for i in geom['pos'].split(" ")])
-                geom_euler = np.array(
-                    [float(i) for i in geom['euler'].split(" ")])
+                geom_euler = np.array([float(i) for i in geom['euler'].split(" ")])
                 geom_rot = sRot.from_euler('XYZ', geom_euler, degrees=True)
                 annot_rot = sRot.from_quat(quat[[1, 2, 3, 0]])
 
                 obj_rot = (annot_rot * geom_rot)
                 obj_euler = obj_rot.as_euler('XYZ', degrees=True)
-                obj_pos = pos + np.matmul(obj_rot.as_matrix(),
-                                          geom_pos[:, None]).squeeze()
+                obj_pos = pos + np.matmul(obj_rot.as_matrix(), geom_pos[:, None]).squeeze()
 
                 geom['euler'] = " ".join([f"{i:.4f}" for i in obj_euler])
                 geom['pos'] = " ".join([f"{i:.4f}" for i in obj_pos])
@@ -264,36 +203,12 @@ class SceneRobot(Robot):
                 body_node.append(geom_node)
 
                 if geom['type'] == "box":
-                    self.scene_sdfs.append(
-                        BoxSDF_F(
-                            trans=[float(i) for i in geom['pos'].split(" ")],
-                            orientation=obj_rot.as_matrix(),
-                            side_lengths=[
-                                float(i) * 2 for i in geom['size'].split(" ")
-                            ]))
-                    self.scene_sdfs_np.append(
-                        BoxSDF_N(trans=np.array(
-                            [float(i) for i in geom['pos'].split(" ")]),
-                                 orientation=obj_rot.as_matrix(),
-                                 side_lengths=np.array([
-                                     float(i) * 2
-                                     for i in geom['size'].split(" ")
-                                 ])))
+                    self.scene_sdfs.append(BoxSDF_F(trans=[float(i) for i in geom['pos'].split(" ")], orientation=obj_rot.as_matrix(), side_lengths=[float(i) * 2 for i in geom['size'].split(" ")]))
+                    self.scene_sdfs_np.append(BoxSDF_N(trans=np.array([float(i) for i in geom['pos'].split(" ")]), orientation=obj_rot.as_matrix(), side_lengths=np.array([float(i) * 2 for i in geom['size'].split(" ")])))
                 elif geom['type'] == "cylinder":
-                    self.scene_sdfs.append(
-                        CylinderSDF_F(
-                            trans=[float(i) for i in geom['pos'].split(" ")],
-                            orientation=obj_rot.as_matrix(),
-                            size=[float(i) for i in geom['size'].split(" ")]))
+                    self.scene_sdfs.append(CylinderSDF_F(trans=[float(i) for i in geom['pos'].split(" ")], orientation=obj_rot.as_matrix(), size=[float(i) for i in geom['size'].split(" ")]))
 
-                    self.scene_sdfs_np.append(
-                        CylinderSDF_N(trans=np.array(
-                            [float(i) for i in geom['pos'].split(" ")]),
-                                      orientation=obj_rot.as_matrix(),
-                                      size=np.array([
-                                          float(i)
-                                          for i in geom['size'].split(" ")
-                                      ])))
+                    self.scene_sdfs_np.append(CylinderSDF_N(trans=np.array([float(i) for i in geom['pos'].split(" ")]), orientation=obj_rot.as_matrix(), size=np.array([float(i) for i in geom['size'].split(" ")])))
 
             worldbody.append(body_node)
 
@@ -328,29 +243,20 @@ class SceneRobot(Robot):
                 }
                 geom_node = Element("geom", geom)
                 body_node.append(geom_node)
-                xy = np.array([float(i)
-                               for i in xyaxes.split(' ')]).reshape(2, 3).T
+                xy = np.array([float(i) for i in xyaxes.split(' ')]).reshape(2, 3).T
                 xyz = np.hstack([xy, np.cross(xy[:, 0], xy[:, 1])[:, None]])
                 sides = np.array([float(i) * 2 for i in size.split(" ")])
 
-                self.scene_sdfs.append(
-                    BoxSDF_F(trans=[float(i) for i in pos.split(" ")],
-                             orientation=xyz,
-                             side_lengths=sides))
+                self.scene_sdfs.append(BoxSDF_F(trans=[float(i) for i in pos.split(" ")], orientation=xyz, side_lengths=sides))
 
-                self.scene_sdfs_np.append(
-                    BoxSDF_N(trans=np.array([float(i)
-                                             for i in pos.split(" ")]),
-                             orientation=xyz,
-                             side_lengths=sides))
+                self.scene_sdfs_np.append(BoxSDF_N(trans=np.array([float(i) for i in pos.split(" ")]), orientation=xyz, side_lengths=sides))
 
         filename = f'{cwd}/data/scenes/{scene_name}_rectangles.txt'
         if os.path.exists(filename):
             rectangles = np.loadtxt(filename)
             rectangles = rectangles.reshape(-1, 8, 3)
             for rectangle in rectangles:
-                pos, size, xyaxes = self.get_scene_attrs_from_rectangle(
-                    rectangle)
+                pos, size, xyaxes = self.get_scene_attrs_from_rectangle(rectangle)
                 geom = {
                     "type": "box",
                     "friction": "1. .1 .1",
@@ -365,20 +271,12 @@ class SceneRobot(Robot):
                 geom_node = Element("geom", geom)
                 body_node.append(geom_node)
 
-                xy = np.array([float(i)
-                               for i in xyaxes.split(' ')]).reshape(2, 3).T
+                xy = np.array([float(i) for i in xyaxes.split(' ')]).reshape(2, 3).T
                 xyz = np.hstack([xy, np.cross(xy[:, 0], xy[:, 1])[:, None]])
                 sides = np.array([float(i) * 2 for i in size.split(" ")])
-                self.scene_sdfs.append(
-                    BoxSDF_F(trans=[float(i) for i in pos.split(" ")],
-                             orientation=xyz,
-                             side_lengths=sides))
+                self.scene_sdfs.append(BoxSDF_F(trans=[float(i) for i in pos.split(" ")], orientation=xyz, side_lengths=sides))
 
-                self.scene_sdfs_np.append(
-                    BoxSDF_N(trans=np.array([float(i)
-                                             for i in pos.split(" ")]),
-                             orientation=xyz,
-                             side_lengths=sides))
+                self.scene_sdfs_np.append(BoxSDF_N(trans=np.array([float(i) for i in pos.split(" ")]), orientation=xyz, side_lengths=sides))
 
         filename = f'{cwd}/data/scenes/{scene_name}_cylinders.txt'
         if os.path.exists(filename):
@@ -403,16 +301,8 @@ class SceneRobot(Robot):
                 # https://iquilezles.org/articles/distfunctions/
                 trans = np.array([float(i) for i in pos.split(" ")])
                 size = np.array([float(i) for i in size.split(" ")])
-                self.scene_sdfs.append(
-                    CylinderSDF_F(trans=trans,
-                                  size=size,
-                                  orientation=[[1, 0, 0], [0, 0, 1], [0, 1,
-                                                                      0]]))
-                self.scene_sdfs.append(
-                    CylinderSDF_N(trans=trans,
-                                  size=size,
-                                  orientation=[[1, 0, 0], [0, 0, 1], [0, 1,
-                                                                      0]]))
+                self.scene_sdfs.append(CylinderSDF_F(trans=trans, size=size, orientation=[[1, 0, 0], [0, 0, 1], [0, 1, 0]]))
+                self.scene_sdfs.append(CylinderSDF_N(trans=trans, size=size, orientation=[[1, 0, 0], [0, 0, 1], [0, 1, 0]]))
 
         filename = f'{cwd}/data/scenes/{scene_name}_circles.txt'
         if os.path.exists(filename):
@@ -437,16 +327,8 @@ class SceneRobot(Robot):
                 # https://iquilezles.org/articles/distfunctions/
                 trans = np.array([float(i) for i in pos.split(" ")])
                 size = np.array([float(i) for i in size.split(" ")])
-                self.scene_sdfs.append(
-                    CylinderSDF_F(trans=trans,
-                                  size=size,
-                                  orientation=[[1, 0, 0], [0, 0, 1], [0, 1,
-                                                                      0]]))
-                self.scene_sdfs.append(
-                    CylinderSDF_N(trans=trans,
-                                  size=size,
-                                  orientation=[[1, 0, 0], [0, 0, 1], [0, 1,
-                                                                      0]]))
+                self.scene_sdfs.append(CylinderSDF_F(trans=trans, size=size, orientation=[[1, 0, 0], [0, 0, 1], [0, 1, 0]]))
+                self.scene_sdfs.append(CylinderSDF_N(trans=trans, size=size, orientation=[[1, 0, 0], [0, 0, 1], [0, 1, 0]]))
 
         self.add_assets(asset_nodes)
         worldbody.append(body_node)
@@ -532,18 +414,14 @@ class SceneRobot(Robot):
                 new_stl_paths.append(stl_path)
         stl_paths = new_stl_paths
 
-        stl_paths = sorted(
-            stl_paths, key=lambda v: int(v.split("/")[-1].split(".")[0][7:]))
+        stl_paths = sorted(stl_paths, key=lambda v: int(v.split("/")[-1].split(".")[0][7:]))
 
         asset_nodes = []
         worldbody = self.tree.getroot().find("worldbody")
         geom_disable_range = np.zeros(len(stl_paths))
 
         body_node = Element("body", {"pos": "0 0 0"})
-        stl_paths_0 = [
-            stl_paths[i] for i in range(len(stl_paths))
-            if geom_disable_range[i] == 0
-        ]
+        stl_paths_0 = [stl_paths[i] for i in range(len(stl_paths)) if geom_disable_range[i] == 0]
         for idx, stl_path in enumerate(stl_paths_0):
             filename = os.path.basename(stl_path).replace(".stl", "")
             mesh_node = Element("mesh", {"file": stl_path})
@@ -601,11 +479,7 @@ class SceneRobot(Robot):
         for asset_node in asset_nodes:
             asset.append(asset_node)
 
-    def export_vis_string_self(self,
-                               num=3,
-                               smpl_robot=None,
-                               fname=None,
-                               num_cones=0):
+    def export_vis_string_self(self, num=3, smpl_robot=None, fname=None, num_cones=0):
         colors = ["0.8 0.6 .4 1", "0.7 0 0 1", "0.0 0.0 0.7 1"] * num
         # Export multiple vis strings
         tree = deepcopy(self.tree)
@@ -640,8 +514,7 @@ class SceneRobot(Robot):
             cur_meshes = deepcopy(vis_meshes)
             for mesh in cur_meshes:
                 old_file = mesh.attrib["file"]
-                mesh.attrib["file"] = mesh.attrib["file"].replace(
-                    ".stl", f"_{i}.stl")
+                mesh.attrib["file"] = mesh.attrib["file"].replace(".stl", f"_{i}.stl")
                 shutil.copy(old_file, mesh.attrib["file"])
                 asset.append(mesh)
 
@@ -664,17 +537,15 @@ class SceneRobot(Robot):
 
         for i in range(num_cones):
             color = np.random.random(3)
-            worldbody.append(
-                Element(
-                    "geom",
-                    {
-                        "pos": "-0.0200 -0.0471 0.6968",
-                        "rgba":
-                        f"{color[0]:.3f} {color[1]:.3f} {color[2]:.3f} 1.0",
-                        "type": "sphere",
-                        "size": "0.0420",
-                    },
-                ))
+            worldbody.append(Element(
+                "geom",
+                {
+                    "pos": "-0.0200 -0.0471 0.6968",
+                    "rgba": f"{color[0]:.3f} {color[1]:.3f} {color[2]:.3f} 1.0",
+                    "type": "sphere",
+                    "size": "0.0420",
+                },
+            ))
 
         if fname is not None:
             print("Writing to file: %s" % fname)
@@ -689,8 +560,7 @@ if __name__ == "__main__":
     parser.add_argument("--cfg", default="copycat_40")
     args = parser.parse_args()
 
-    cc_cfg = CC_Config(cfg_id="copycat_e_1",
-                       base_dir="/hdd/zen/dev/copycat/Copycat/")
+    cc_cfg = CC_Config(cfg_id="copycat_e_1", base_dir="/hdd/zen/dev/copycat/Copycat/")
 
     smpl_robot = SceneRobot(
         cc_cfg.robot_cfg,
@@ -698,9 +568,7 @@ if __name__ == "__main__":
         masterfoot=cc_cfg.masterfoot,
     )
 
-    smpl_robot.load_from_skeleton(torch.zeros((1, 16)),
-                                  gender=[0],
-                                  scene_and_key="N3Library_03301_01")
+    smpl_robot.load_from_skeleton(torch.zeros((1, 16)), gender=[0], scene_and_key="N3Library_03301_01")
     smpl_robot.write_xml("test.xml")
 
     # model = mujoco_py.load_model_from_xml(smpl_robot.export_xml_string().decode("utf-8"))

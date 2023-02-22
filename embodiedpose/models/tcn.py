@@ -1,9 +1,10 @@
 import torch.nn as nn
 from torch.nn.utils import weight_norm
-from copycat.utils.torch_ext import *
+from uhc.utils.torch_ext import *
 
 
 class Chomp1d(nn.Module):
+
     def __init__(self, chomp_size):
         super().__init__()
         self.chomp_size = chomp_size
@@ -13,18 +14,12 @@ class Chomp1d(nn.Module):
 
 
 class TemporalBlock(nn.Module):
-    def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation,
-                 dropout, causal):
+
+    def __init__(self, n_inputs, n_outputs, kernel_size, stride, dilation, dropout, causal):
         super().__init__()
         padding = (kernel_size - 1) * dilation // (1 if causal else 2)
         modules = []
-        self.conv1 = weight_norm(
-            nn.Conv1d(n_inputs,
-                      n_outputs,
-                      kernel_size,
-                      stride=stride,
-                      padding=padding,
-                      dilation=dilation))
+        self.conv1 = weight_norm(nn.Conv1d(n_inputs, n_outputs, kernel_size, stride=stride, padding=padding, dilation=dilation))
         modules.append(self.conv1)
         if causal:
             modules.append(Chomp1d(padding))
@@ -32,13 +27,7 @@ class TemporalBlock(nn.Module):
         if dropout > 0:
             modules.append(nn.Dropout(dropout))
 
-        self.conv2 = weight_norm(
-            nn.Conv1d(n_outputs,
-                      n_outputs,
-                      kernel_size,
-                      stride=stride,
-                      padding=padding,
-                      dilation=dilation))
+        self.conv2 = weight_norm(nn.Conv1d(n_outputs, n_outputs, kernel_size, stride=stride, padding=padding, dilation=dilation))
         modules.append(self.conv2)
         if causal:
             modules.append(Chomp1d(padding))
@@ -48,8 +37,7 @@ class TemporalBlock(nn.Module):
 
         self.net = nn.Sequential(*modules)
 
-        self.downsample = nn.Conv1d(n_inputs, n_outputs,
-                                    1) if n_inputs != n_outputs else None
+        self.downsample = nn.Conv1d(n_inputs, n_outputs, 1) if n_inputs != n_outputs else None
         self.relu = nn.ReLU()
         self.init_weights()
 
@@ -66,12 +54,8 @@ class TemporalBlock(nn.Module):
 
 
 class TemporalConvNet(nn.Module):
-    def __init__(self,
-                 num_inputs,
-                 num_channels,
-                 kernel_size=3,
-                 dropout=0.2,
-                 causal=False):
+
+    def __init__(self, num_inputs, num_channels, kernel_size=3, dropout=0.2, causal=False):
         super().__init__()
         assert kernel_size % 2 == 1
         layers = []
@@ -80,15 +64,7 @@ class TemporalConvNet(nn.Module):
             dilation_size = 2**i
             in_channels = num_inputs if i == 0 else num_channels[i - 1]
             out_channels = num_channels[i]
-            layers += [
-                TemporalBlock(in_channels,
-                              out_channels,
-                              kernel_size,
-                              stride=1,
-                              dilation=dilation_size,
-                              dropout=dropout,
-                              causal=causal)
-            ]
+            layers += [TemporalBlock(in_channels, out_channels, kernel_size, stride=1, dilation=dilation_size, dropout=dropout, causal=causal)]
 
         self.network = nn.Sequential(*layers)
 

@@ -12,7 +12,7 @@ import numpy as np
 
 sys.path.append(os.getcwd())
 import matplotlib.pyplot as plt
-from copycat.smpllib.smpl_parser import SMPL_Parser, SMPLX_Parser
+from uhc.smpllib.smpl_parser import SMPL_Parser, SMPLX_Parser
 from embodiedpose.models.humor.torch_humor_loss import chamfer_loss
 from embodiedpose.utils.scene_utils import get_sdf, load_simple_scene
 from tqdm import tqdm
@@ -43,15 +43,7 @@ def load_camera_params(prox_path, scene_name):
     full_R = R.dot(aR)
     full_t = R.dot(atr) + tr
 
-    return {
-        "K": K,
-        "R": R,
-        "tr": tr,
-        "aR": aR,
-        "atr": atr,
-        "full_R": full_R,
-        "full_t": full_t
-    }
+    return {"K": K, "R": R, "tr": tr, "aR": aR, "atr": atr, "full_R": full_R, "full_t": full_t}
 
 
 def compute_accel(joints):
@@ -108,7 +100,6 @@ def evaluate():
     if args.chamfer:
         filepath = osp.join(prox_path, 'thirdeye_anns_proxd_overlap_full.pkl')
         points3d_results = joblib.load(filepath)
-    
 
     if args.method == 'lemo' or args.method == 'proxd' or args.method == 'prox':
         smpl_parser_n = SMPLX_Parser(model_path='./data/smpl/smplx', gender="neutral", use_pca=False, create_transl=False).cuda()
@@ -116,11 +107,10 @@ def evaluate():
         smpl_parser_f = SMPLX_Parser(model_path='./data/smpl/smplx', gender="female", use_pca=False, create_transl=False).cuda()
     else:
         data_dir = "data/smpl"
-        
-        smpl_parser_n = SMPL_Parser(model_path=data_dir,gender="neutral").cuda()
-        smpl_parser_m = SMPL_Parser(model_path=data_dir,gender="male").cuda()
-        smpl_parser_f = SMPL_Parser(model_path=data_dir,gender="female").cuda()
 
+        smpl_parser_n = SMPL_Parser(model_path=data_dir, gender="neutral").cuda()
+        smpl_parser_m = SMPL_Parser(model_path=data_dir, gender="male").cuda()
+        smpl_parser_f = SMPL_Parser(model_path=data_dir, gender="female").cuda()
 
     frame_num = 0
     gp_sum = 0
@@ -158,7 +148,7 @@ def evaluate():
             if 'fail' in seq_results and seq_results['fail']:
                 print(seq_name, "failed")
                 continue
-            
+
             if args.method == 'prox' or args.method == 'proxd':
                 ind1 = np.sum(np.isnan(trans), axis=1)
                 ind2 = np.sum(np.isnan(pose_aa), axis=1)
@@ -167,7 +157,6 @@ def evaluate():
                 trans = trans[ind == 0]
             else:
                 ind = None
-
 
             pose_aa = torch.from_numpy(pose_aa).cuda()
             betas = torch.from_numpy(betas).cuda()
@@ -178,17 +167,20 @@ def evaluate():
                 pose_aa = torch.cat([pose_aa, pad], dim=1)
                 pad = torch.zeros((1, 10)).cuda()
                 betas = torch.cat([betas, pad], dim=1)
-                if gender == "male": smpl_parser = smpl_parser_m
-                elif gender == "female": smpl_parser = smpl_parser_f
-                elif gender == "neutral": smpl_parser = smpl_parser_n
-                else: raise ValueError
-                
+                if gender == "male":
+                    smpl_parser = smpl_parser_m
+                elif gender == "female":
+                    smpl_parser = smpl_parser_f
+                elif gender == "neutral":
+                    smpl_parser = smpl_parser_n
+                else:
+                    raise ValueError
+
             else:
                 smpl_parser = smpl_parser_n
-          
+
             try:
-                vertices, joints = smpl_parser.get_joints_verts(
-                    pose_aa, betas, trans)
+                vertices, joints = smpl_parser.get_joints_verts(pose_aa, betas, trans)
             except Exception as e:
                 # import ipdb; ipdb.set_trace()
                 print(e)
@@ -219,7 +211,7 @@ def evaluate():
             if args.chamfer:
                 # seq_results_d = points3d_results[seq_name]
                 # points3d = torch.from_numpy(seq_results_d['points3d']).float().cuda()
-                
+
                 if args.method == "thirdeye":
                     vertices = vertices[TRIM_EDGE:]
 
@@ -232,7 +224,7 @@ def evaluate():
                     points3d = points3d[ind == 0].reshape(-1, 3)
                 else:
                     points3d = points3d[:num_seq].reshape(-1, 3)
-                
+
                 points3d = (points3d - full_t) @ full_R
                 points3d = points3d.reshape(vertices.shape[0], -1, 3)
                 is_valid = points3d.isnan().sum(dim=1).sum(dim=1) == 0
@@ -243,8 +235,8 @@ def evaluate():
 
                 chamfer_dist = dist.mean(dim=1)
                 # if (chamfer_dist > 20).sum():
-                    # print("chamfer fail!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", seq_name)
-                    # continue
+                # print("chamfer fail!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", seq_name)
+                # continue
 
                 chamfer_sum += chamfer_dist.sum().item()
                 res_dict['chamfer_sum'][seq_name] = chamfer_dist.sum().item()
@@ -276,8 +268,7 @@ def evaluate():
                 dist_pf = torch.clamp(dist.reshape(-1, 10475), max=0.0)
             else:
                 dist_pf = torch.clamp(dist.reshape(-1, 6890), max=0.0)
-            sp_mean_pf = -dist_pf.sum(dim=1) / (
-                (dist_pf < 0.0).sum(dim=1) + 1e-10)
+            sp_mean_pf = -dist_pf.sum(dim=1) / ((dist_pf < 0.0).sum(dim=1) + 1e-10)
             sp_freq += (sp_mean_pf > PEN_THRESH).sum().item()
 
             torch.cuda.empty_cache()
@@ -293,15 +284,14 @@ def evaluate():
 
         print("# Evaluated on:", len(res_dict['chamfer_sum']))
         print(args.method)
-        import ipdb; ipdb.set_trace()
+        import ipdb
+        ipdb.set_trace()
         np.sort(list(res_dict['chamfer_sum'].values()))
         np.argsort(list(res_dict['chamfer_sum'].values()))
         np.array(list(res_dict['chamfer_sum'].keys()))[12]
         "N0SittingBooth_00169_02"
         "MPH1Library_00145_01"
         "BasementSittingBooth_03452_01"
-
-
 
         if args.method == 'thirdeye':
             print('Success Rate', results['success_rate'])
@@ -313,7 +303,7 @@ if __name__ == '__main__':
     parser.add_argument("--method", default="thirdeye", type=str)
     parser.add_argument("--data", default="prox", type=str)
     parser.add_argument("--cfg", default=None, type=str)
-    parser.add_argument("--chamfer", default = True, action='store_true')
+    parser.add_argument("--chamfer", default=True, action='store_true')
     parser.add_argument("--epoch", default=-1, type=int)
     args = parser.parse_args()
     evaluate()

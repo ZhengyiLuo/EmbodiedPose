@@ -1,7 +1,7 @@
 from smplx.lbs import vertices2joints
 from torch.optim.lr_scheduler import StepLR
 from scipy.ndimage import gaussian_filter1d
-from copycat.khrylib.utils.transformation import (
+from uhc.khrylib.utils.transformation import (
     quaternion_slerp,
     quaternion_from_euler,
     euler_from_quaternion,
@@ -9,7 +9,7 @@ from copycat.khrylib.utils.transformation import (
 from tqdm import tqdm
 from torch.autograd import Variable
 from collections import defaultdict
-from copycat.utils.transform_utils import (
+from uhc.utils.transform_utils import (
     convert_aa_to_orth6d,
     convert_orth_6d_to_aa,
     vertizalize_smpl_root,
@@ -25,7 +25,7 @@ import numpy as np
 import torch
 import copy
 from mujoco_py import load_model_from_path
-from copycat.khrylib.utils import *
+from uhc.khrylib.utils import *
 import joblib
 from scipy.spatial.transform import Rotation as sRot
 
@@ -35,8 +35,8 @@ import sys
 import pdb
 import os.path as osp
 import argparse
-# from copycat.smpllib.smpl_parser import SMPL_Parser
-from copycat.data_process.grad_h36m_convert import smooth_smpl_quat_window
+# from uhc.smpllib.smpl_parser import SMPL_Parser
+from uhc.data_process.grad_h36m_convert import smooth_smpl_quat_window
 
 from embodiedpose.models.smpl_multi import SMPL as SMPL_Multi
 
@@ -54,34 +54,23 @@ if __name__ == "__main__":
     parser.add_argument("--data", type=str, default="train")
     args = parser.parse_args()
     data = args.data
-    device = (torch.device("cuda", index=0)
-              if torch.cuda.is_available() else torch.device("cpu"))
+    device = (torch.device("cuda", index=0) if torch.cuda.is_available() else torch.device("cpu"))
 
     gpa_base_dir = "/hdd/zen/data/video_pose/GPA/"
 
-    smpl_p = SMPL_Multi(
-        "/hdd/zen/dev/copycat/Copycat/data/smpl",
-        gender="neutral",
-        joint_regressor_extra=
-        "/hdd/zen/dev/ActMix/actmix/DataGen/MotionCapture/VIBE/data/vibe_data/J_regressor_extra.npy"
-    )
+    smpl_p = SMPL_Multi("/hdd/zen/dev/copycat/Copycat/data/smpl", gender="neutral", joint_regressor_extra="/hdd/zen/dev/ActMix/actmix/DataGen/MotionCapture/VIBE/data/vibe_data/J_regressor_extra.npy")
     smpl_p = smpl_p.to(device)
 
     idx = 0
     # data_fit = joblib.load('/hdd/zen/data/video_pose/GPA/smpl_fits_test/data_split000.pkl')
     out_dir = osp.join(gpa_base_dir, "smpl_fits_grad")
     data_files = glob.glob("/hdd/zen/data/video_pose/GPA/smpl_fits_full/*.pkl")
-    gpa_take1 = joblib.load(
-        osp.join(gpa_base_dir, 'gpa_dataset_full_take1.pkl'))
+    gpa_take1 = joblib.load(osp.join(gpa_base_dir, 'gpa_dataset_full_take1.pkl'))
 
     num_epochs = 5000
     lixel_order = [0, 4, 5, 6, 1, 2, 3, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
 
-    subindex = np.array([
-        True, True, True, True, True, True, True, True, True, True, True, True,
-        True, True, True, False, True, True, False, False, False, False, False,
-        False
-    ])
+    subindex = np.array([True, True, True, True, True, True, True, True, True, True, True, True, True, True, True, False, True, True, False, False, False, False, False, False])
     # for k, data_item in tqdm(data_fit.items()):
     for data_file in data_files:
         data_out = {}
@@ -102,8 +91,7 @@ if __name__ == "__main__":
         length = pose_aa.shape[0]
         # pose_aa = smooth_smpl_quat_window(pose_aa, ratio = 0.5).reshape(-1, 72)
 
-        gt_kps = torch.from_numpy(
-            gpa_take1[k]['S24']).to(device).float()[:length, :, :3].clone()
+        gt_kps = torch.from_numpy(gpa_take1[k]['S24']).to(device).float()[:length, :, :3].clone()
         pose_aa_torch = torch.tensor(pose_aa).float().to(device)
         # trans = gaussian_filter1d(trans, 3, axis=0); trans = torch.from_numpy(trans).to(device).float()
 
@@ -140,15 +128,11 @@ if __name__ == "__main__":
             shapes = shape_new.repeat((pose_aa.shape[0], 1))
             shapes.retain_grad()
 
-            vertices, joints = smpl_p.get_joints_verts(pose_aa_torch_new,
-                                                       th_betas=shapes,
-                                                       th_trans=trans_new)
+            vertices, joints = smpl_p.get_joints_verts(pose_aa_torch_new, th_betas=shapes, th_trans=trans_new)
             smpl_j3d_torch = joints
 
             # loss = torch.abs(smpl_j3d_torch - gt_kps).mean()
-            loss = torch.norm(smpl_j3d_torch[:, subindex] -
-                              gt_kps[:, subindex],
-                              dim=2).mean()
+            loss = torch.norm(smpl_j3d_torch[:, subindex] - gt_kps[:, subindex], dim=2).mean()
 
             # print(loss_l2.item() * 1000, 'Epoch:', i,'LR:', scheduler_mesh.get_lr(), scheduler_trans.get_lr())
             if i % 100 == 0:

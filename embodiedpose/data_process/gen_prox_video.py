@@ -21,7 +21,7 @@ from collections import defaultdict
 import json
 from tqdm import tqdm
 
-from copycat.utils.image_utils import read_img_dir, write_frames_to_video
+from uhc.utils.image_utils import read_img_dir, write_frames_to_video
 
 # prox_base = "/hdd/zen/data/video_pose/prox/qualitative/"
 # for prox_dir in glob.glob(osp.join(prox_base, "recordings", "*")):
@@ -36,7 +36,6 @@ from copycat.utils.image_utils import read_img_dir, write_frames_to_video
 #     del frames
 #     import gc
 #     gc.collect()
-
 
 # hrnet_base = "/hdd/zen/data/video_pose/prox/hrnet_res"
 # for prox_dir in glob.glob(osp.join(hrnet_base, "images", "*")):
@@ -79,7 +78,6 @@ from copycat.utils.image_utils import read_img_dir, write_frames_to_video
 #     import gc
 #     gc.collect()
 
-
 # import cv2
 # TRIM = 90
 # prox_base = "/hdd/zen/data/video_pose/prox/qualitative/"
@@ -118,6 +116,7 @@ from copycat.utils.image_utils import read_img_dir, write_frames_to_video
 #         print("fail at", prox_dir)
 
 import cv2
+
 TRIM = 90
 data_base = "/hdd/zen/data/video_pose/prox/qualitative/renderings/sceneplus/tcn_voxel_4_1/prox"
 for video_full_name in tqdm(glob.glob(osp.join(data_base, "prox", "*"))):
@@ -131,12 +130,8 @@ for video_full_name in tqdm(glob.glob(osp.join(data_base, "prox", "*"))):
                 image_frames.append(frame)
             else:
                 break
-        image_frames = np.array(image_frames)[90:, :, ]
-        write_frames_to_video(
-            image_frames,
-            out_file_name=
-            osp.join(data_base, "prox_chop", video_file_name)
-        )
+        image_frames = np.array(image_frames)[90:, :,]
+        write_frames_to_video(image_frames, out_file_name=osp.join(data_base, "prox_chop", video_file_name))
         print(f"done {video_full_name}")
 
         del image_frames
@@ -145,12 +140,11 @@ for video_full_name in tqdm(glob.glob(osp.join(data_base, "prox", "*"))):
     except:
         print("fail at", video_full_name)
 
-
 # import cv2
 # data_base = "temp"
 # os.makedirs(osp.join(data_base,  "tcn_voxel_1") , exist_ok=True)
 # for images_dir in tqdm(glob.glob(osp.join(data_base, "tcn_voxel_1", "*"))):
-    
+
 #     image_frames = read_img_dir(images_dir)
 #     if len(image_frames) == 0:
 #         continue
@@ -161,7 +155,6 @@ for video_full_name in tqdm(glob.glob(osp.join(data_base, "prox", "*"))):
 #         out_file_name=
 #         osp.join(data_base, "videos", images_dir.split("/")[-1] + ".mp4")
 #     )
-    
 
 #     del image_frames
 #     import gc

@@ -17,11 +17,11 @@ import wandb
 from tqdm import tqdm
 import numpy as np
 import math
-from copycat.khrylib.utils import to_device, create_logger
-from copycat.utils.flags import flags
+from uhc.khrylib.utils import to_device, create_logger
+from uhc.utils.flags import flags
 
-from copycat.smpllib.torch_smpl_humanoid import Humanoid
-from copycat.losses.loss_function import (
+from uhc.smpllib.torch_smpl_humanoid import Humanoid
+from uhc.losses.loss_function import (
     compute_mpjpe_global,
     pose_rot_loss,
     root_pos_loss,
@@ -35,16 +35,14 @@ from copycat.losses.loss_function import (
     compute_error_accel,
     compute_error_vel,
 )
-from copycat.utils.torch_ext import gather_vecs
-from copycat.utils.transformation import quaternion_about_axis, quaternion_matrix
-import copycat.utils.pytorch3d_transforms as tR
-from copycat.khrylib.models.rnn import RNN
-from copycat.utils.torch_geometry_transforms import (
-    angle_axis_to_rotation_matrix as aa2mat, rotation_matrix_to_angle_axis as
-    mat2aa)
-from copycat.models.kin_net_base import KinNetBase
-from copycat.smpllib.smpl_mujoco import smpl_to_qpose, smpl_to_qpose_torch
-from copycat.khrylib.models.mlp import MLP, MLPWithInputSkips
+from uhc.utils.torch_ext import gather_vecs
+from uhc.utils.transformation import quaternion_about_axis, quaternion_matrix
+import uhc.utils.pytorch3d_transforms as tR
+from uhc.khrylib.models.rnn import RNN
+from uhc.utils.torch_geometry_transforms import (angle_axis_to_rotation_matrix as aa2mat, rotation_matrix_to_angle_axis as mat2aa)
+from uhc.models.kin_net_base import KinNetBase
+from uhc.smpllib.smpl_mujoco import smpl_to_qpose, smpl_to_qpose_torch
+from uhc.khrylib.models.mlp import MLP, MLPWithInputSkips
 
 from embodiedpose.models.humor.utils.humor_mujoco import reorder_joints_to_humor
 from embodiedpose.models.humor.humor_model import HumorModel
@@ -52,29 +50,16 @@ from embodiedpose.models.humor.utils.torch import load_state as load_humor_state
 from embodiedpose.models.humor.torch_humor_loss import points3d_loss, kl_normal
 from embodiedpose.models.humor.body_model.utils import smpl_to_openpose
 from embodiedpose.models.humor.utils.velocities import estimate_velocities
-from copycat.khrylib.rl.core.running_norm import RunningNorm
+from uhc.khrylib.rl.core.running_norm import RunningNorm
 import copy
 from embodiedpose.models.uhm_model import UHMModel
 from embodiedpose.utils.scene_utils import load_simple_scene, get_sdf
 from embodiedpose.models.humor.utils.humor_mujoco import SMPL_2_OP, MUJOCO_2_SMPL
 from embodiedpose.models.kin_tcn import TemporalModel, TemporalModelOptimized1f
-from copycat.utils.torch_ext import isNpArray
+from uhc.utils.torch_ext import isNpArray
 
 FPS = 30
-PROX_SCENE = [
- 'BasementSittingBooth',
- 'MPH11',
- 'MPH112',
- 'MPH16',
- 'MPH1Library',
- 'MPH8',
- 'N0SittingBooth',
- 'N0Sofa',
- 'N3Library',
- 'N3Office',
- 'N3OpenArea',
- 'Werkraum'
-]
+PROX_SCENE = ['BasementSittingBooth', 'MPH11', 'MPH112', 'MPH16', 'MPH1Library', 'MPH8', 'N0SittingBooth', 'N0Sofa', 'N3Library', 'N3Office', 'N3OpenArea', 'Werkraum']
 
 
 def smpl_op_to_op(pred_joints2d):
@@ -102,13 +87,7 @@ class KinNetHumorRes(KinNetBase):
         self.sim = {}
         self.use_rnn = self.model_specs.get("use_rnn", False)
 
-        self.motion_prior = UHMModel(in_rot_rep="mat",
-                                     out_rot_rep=self.model_specs.get(
-                                         "out_rot_rep", "aa"),
-                                     latent_size=24,
-                                     model_data_config="smpl+joints",
-                                     steps_in=1,
-                                     use_gn=False)
+        self.motion_prior = UHMModel(in_rot_rep="mat", out_rot_rep=self.model_specs.get("out_rot_rep", "aa"), latent_size=24, model_data_config="smpl+joints", steps_in=1, use_gn=False)
 
         to_device(device, self.motion_prior)
 
@@ -125,44 +104,24 @@ class KinNetHumorRes(KinNetBase):
         self.use_tcn = self.model_specs.get("use_tcn", False)
         if self.use_tcn:
             tcn_arch = self.model_specs.get("tcn_arch", "3,3,3")
-            self.filter_widths = filter_widths = [
-                int(x) for x in tcn_arch.split(',')
-            ]
+            self.filter_widths = filter_widths = [int(x) for x in tcn_arch.split(',')]
             self.num_context = int(np.prod(filter_widths))
 
-        self.humor_models = [
-            HumorModel(in_rot_rep="mat",
-                       out_rot_rep="aa",
-                       latent_size=48,
-                       model_data_config="smpl+joints+contacts",
-                       steps_in=1,
-                       use_vposer=cfg.get("use_vposer", True))
-        ]
-        load_humor_state("./data/humor/best_model.pth",
-                         self.humor_models[0],
-                         map_location=device)
+        self.humor_models = [HumorModel(in_rot_rep="mat", out_rot_rep="aa", latent_size=48, model_data_config="smpl+joints+contacts", steps_in=1, use_vposer=cfg.get("use_vposer", True))]
+        load_humor_state("./data/humor/best_model.pth", self.humor_models[0], map_location=device)
         for param in self.humor_models[0].parameters():
             param.requires_grad = False
         to_device(device, self.humor_models[0])
 
-        self.smpl2op_map = smpl_to_openpose(
-            self.motion_prior.bm_dict['neutral'].model_type,
-            use_hands=False,
-            use_face=False,
-            use_face_contour=False,
-            openpose_format='coco25')
+        self.smpl2op_map = smpl_to_openpose(self.motion_prior.bm_dict['neutral'].model_type, use_hands=False, use_face=False, use_face_contour=False, openpose_format='coco25')
         self.smpl_2op_submap = self.smpl2op_map[self.smpl2op_map < 22]
 
         self.qpos_lm = 74  # TODO : get this from the SMPL model
         self.qvel_lm = 75
         self.pose_start = 7
-        self.mlp_hsize = mlp_hsize = self.model_specs.get(
-            "mlp_hsize", [1024, 512])
+        self.mlp_hsize = mlp_hsize = self.model_specs.get("mlp_hsize", [1024, 512])
         self.htype = htype = self.model_specs.get("mlp_htype", "relu")
-        self.humor_keys = [
-            'pose_body', 'root_orient', 'root_orient_vel', 'trans',
-            'trans_vel', 'joints', 'joints_vel'
-        ]
+        self.humor_keys = ['pose_body', 'root_orient', 'root_orient_vel', 'trans', 'trans_vel', 'joints', 'joints_vel']
 
         self.load_humanoid()
         data_sample = self.init_states(data_sample, random_cam=True)
@@ -189,18 +148,10 @@ class KinNetHumorRes(KinNetBase):
                         action_mean = nn.Linear(mlp_hsize[-1], self.body_action_dim)
                         action_mean.weight.data.mul_(0.1)
                         action_mean.bias.data.mul_(0.0)
-                        net = nn.Sequential(*[
-                            MLP(rnn_hdim + state_dim, mlp_hsize, htype), action_mean
-                        ])
+                        net = nn.Sequential(*[MLP(rnn_hdim + state_dim, mlp_hsize, htype), action_mean])
                         self.nets.append(net)
 
-                    self.composer = nn.Sequential(*[
-                        MLP(
-                            rnn_hdim + state_dim + env_net_dim,
-                            cfg.get("composer_dim", [512, 512]) +
-                            [num_primitive], htype),
-                        nn.Softmax(dim=1)
-                    ])
+                    self.composer = nn.Sequential(*[MLP(rnn_hdim + state_dim + env_net_dim, cfg.get("composer_dim", [512, 512]) + [num_primitive], htype), nn.Softmax(dim=1)])
 
                 else:
                     self.action_mlp = MLP(rnn_hdim + state_dim + env_feat_dim, mlp_hsize, htype)
@@ -215,8 +166,7 @@ class KinNetHumorRes(KinNetBase):
                     body_feat_dim = np.sum(self.is_root_obs == 0)
                     env_feat_dim = np.sum(self.is_root_obs == 2)
 
-                    self.action_rnn = RNN(root_feat_dim + body_feat_dim,
-                                          rnn_hdim, "gru")
+                    self.action_rnn = RNN(root_feat_dim + body_feat_dim, rnn_hdim, "gru")
                     self.action_rnn.set_mode("step")
                     self.env_mlp = MLP(env_feat_dim, mlp_hsize, htype)
 
@@ -227,10 +177,8 @@ class KinNetHumorRes(KinNetBase):
                 else:
                     self.action_rnn = RNN(self.state_dim, rnn_hdim, "gru")
                     self.action_rnn.set_mode("step")
-                    self.root_mlp = MLP(rnn_hdim + self.state_dim, mlp_hsize,
-                                        htype)
-                    self.body_mlp = MLP(rnn_hdim + self.state_dim, mlp_hsize,
-                                        htype)
+                    self.root_mlp = MLP(rnn_hdim + self.state_dim, mlp_hsize, htype)
+                    self.body_mlp = MLP(rnn_hdim + self.state_dim, mlp_hsize, htype)
                     self.root_fc = nn.Linear(mlp_hsize[-1], 6)
                     self.body_fc = nn.Linear(mlp_hsize[-1], 63)
 
@@ -247,24 +195,11 @@ class KinNetHumorRes(KinNetBase):
 
                 casual = self.model_specs.get("casual_tcn", True)
 
-                self.tcn_body_1f = TemporalModelOptimized1f(
-                    num_joints_in=12,
-                    in_features=body_in_features,
-                    num_joints_out=14,
-                    filter_widths=filter_widths,
-                    causal=casual)
-                self.tcn_traj_1f = TemporalModelOptimized1f(
-                    num_joints_in=12,
-                    in_features=traj_in_features,
-                    num_joints_out=1,
-                    filter_widths=filter_widths,
-                    causal=casual)
+                self.tcn_body_1f = TemporalModelOptimized1f(num_joints_in=12, in_features=body_in_features, num_joints_out=14, filter_widths=filter_widths, causal=casual)
+                self.tcn_traj_1f = TemporalModelOptimized1f(num_joints_in=12, in_features=traj_in_features, num_joints_out=1, filter_widths=filter_widths, causal=casual)
                 self.tcn_body_1f.float(), self.tcn_traj_1f.float()
 
-                self.tcn_opt = torch.optim.Adam(
-                    list(self.tcn_body_1f.parameters()) +
-                    list(self.tcn_traj_1f.parameters()),
-                    lr=0.0005)
+                self.tcn_opt = torch.optim.Adam(list(self.tcn_body_1f.parameters()) + list(self.tcn_traj_1f.parameters()), lr=0.0005)
 
         else:
             self.action_mlp = MLP(self.state_dim, mlp_hsize, htype)
@@ -287,7 +222,7 @@ class KinNetHumorRes(KinNetBase):
                 agent_state = state_norm[:, np.logical_or(self.is_root_obs == 0, self.is_root_obs == 1)[0]]
                 env_state = state_norm[:, (self.is_root_obs == 2)[0]]
                 rnn_out = self.action_rnn(agent_state)
-                state_norm = torch.cat((agent_state, rnn_out),dim=1)
+                state_norm = torch.cat((agent_state, rnn_out), dim=1)
 
                 if self.model_specs.get("use_voxel", False):
                     env_net_res = self.env_mlp(env_state)
@@ -342,25 +277,18 @@ class KinNetHumorRes(KinNetBase):
                         kp_2d_feats_local[..., 2:] = kp_2d_feats[..., 2:] - kp_2d_feats[..., 7:8, 2:]
                         traj_pred = self.tcn_traj_1f(kp_2d_feats)
                         if self.model_specs.get("tcn_body2d", False):
-                            body_pos_pred = self.tcn_body_1f(
-                                kp_2d_feats_local[:, :, :, :2])
+                            body_pos_pred = self.tcn_body_1f(kp_2d_feats_local[:, :, :, :2])
                         else:
-                            body_pos_pred = self.tcn_body_1f(
-                                kp_2d_feats_local)
+                            body_pos_pred = self.tcn_body_1f(kp_2d_feats_local)
                     else:
-                        traj_pred = self.tcn_traj_1f(kp_2d_feats.reshape(B, self.num_context, 12,2).float())
-                        body_pos_pred = self.tcn_body_1f(
-                            kp_2d_feats.reshape(B, self.num_context, 12,
-                                                2).float())
+                        traj_pred = self.tcn_traj_1f(kp_2d_feats.reshape(B, self.num_context, 12, 2).float())
+                        body_pos_pred = self.tcn_body_1f(kp_2d_feats.reshape(B, self.num_context, 12, 2).float())
 
                 else:
                     traj_pred = torch.zeros([B, 1, 3]).to(state)
                     body_pos_pred = torch.zeros([B, 14, 3]).to(state)
 
-                action = torch.cat([
-                    action,
-                    traj_pred.reshape(B, -1),
-                    body_pos_pred.reshape(B, -1)],dim=1)
+                action = torch.cat([action, traj_pred.reshape(B, -1), body_pos_pred.reshape(B, -1)], dim=1)
         else:
             state_norm = self.norm(state)
             # x = state
@@ -372,10 +300,7 @@ class KinNetHumorRes(KinNetBase):
         # pose_aa_curr = data_dict[f"pose_aa"][:, 0, :]
         # trans_curr = data_dict[f"trans"][:, 0, :]
         self.is_root_obs = []
-        humor_dict = {
-            k: data_dict[k][:, 0:1, :].clone()
-            for k in self.motion_prior.data_names
-        }
+        humor_dict = {k: data_dict[k][:, 0:1, :].clone() for k in self.motion_prior.data_names}
         self.set_sim(humor_dict)
 
         state, _ = self.get_obs(data_dict, 0)
@@ -398,43 +323,25 @@ class KinNetHumorRes(KinNetBase):
 
         B = next_global_out['pose_body'].size(0)
 
-        body_pose_aa = mat2aa(next_global_out['pose_body'].reshape(
-            B * 21, 3, 3)).reshape(B, 63)
-        root_aa = mat2aa(next_global_out['root_orient'].reshape(B, 3,
-                                                                3)).reshape(
-                                                                    B, 3)
+        body_pose_aa = mat2aa(next_global_out['pose_body'].reshape(B * 21, 3, 3)).reshape(B, 63)
+        root_aa = mat2aa(next_global_out['root_orient'].reshape(B, 3, 3)).reshape(B, 3)
 
-        pose_aa = torch.cat(
-            [root_aa, body_pose_aa,
-             torch.zeros(B, 6).to(root_aa)], dim=1)
+        pose_aa = torch.cat([root_aa, body_pose_aa, torch.zeros(B, 6).to(root_aa)], dim=1)
 
-        qpos = smpl_to_qpose_torch(pose_aa,
-                                   self.model,
-                                   trans=next_global_out['trans'].reshape(
-                                       B, 3),
-                                   count_offset=True)
+        qpos = smpl_to_qpose_torch(pose_aa, self.model, trans=next_global_out['trans'].reshape(B, 3), count_offset=True)
         out_len = qpos.size(0)
-        fk_result = self.humanoid.qpos_fk(qpos,
-                                          to_numpy=False,
-                                          full_return=False)
-        joints = reorder_joints_to_humor(
-            fk_result["wbpos"].clone(), self.model,
-            self.cfg.cc_cfg.robot_cfg.get("model", "smpl"))[:, :66]
-        trans_vel, joints_vel, root_orient_vel = estimate_velocities(
-            torch.cat([self.sim['trans'], next_global_out['trans']],
-                      dim=1).reshape(B, -1, 3),
-            torch.cat(
-                [self.sim['root_orient'], next_global_out['root_orient']],
-                dim=1).reshape(B, -1, 1, 3, 3),
-            torch.cat([self.sim['joints'], joints[:, None, :]],
-                      dim=1).reshape(B, -1, 22, 3),
-            FPS,
-            aa_to_mat=False)
+        fk_result = self.humanoid.qpos_fk(qpos, to_numpy=False, full_return=False)
+        joints = reorder_joints_to_humor(fk_result["wbpos"].clone(), self.model, self.cfg.cc_cfg.robot_cfg.get("model", "smpl"))[:, :66]
+        trans_vel, joints_vel, root_orient_vel = estimate_velocities(torch.cat([self.sim['trans'], next_global_out['trans']], dim=1).reshape(B, -1, 3),
+                                                                     torch.cat([self.sim['root_orient'], next_global_out['root_orient']], dim=1).reshape(B, -1, 1, 3, 3),
+                                                                     torch.cat([self.sim['joints'], joints[:, None, :]], dim=1).reshape(B, -1, 22, 3),
+                                                                     FPS,
+                                                                     aa_to_mat=False)
 
         next_global_out['joints'] = joints.reshape(B, -1, 66)
-        next_global_out['trans_vel'] = trans_vel[:, 0:1, ]
-        next_global_out['joints_vel'] = joints_vel[:, 0:1, ]
-        next_global_out['root_orient_vel'] = root_orient_vel[:, 0:1, ]
+        next_global_out['trans_vel'] = trans_vel[:, 0:1,]
+        next_global_out['joints_vel'] = joints_vel[:, 0:1,]
+        next_global_out['root_orient_vel'] = root_orient_vel[:, 0:1,]
         return next_global_out
 
     def get_sim_joints(self, data_dict):
@@ -446,24 +353,16 @@ class KinNetHumorRes(KinNetBase):
         pose_aa = mat2aa(pose_aa_mat.reshape(B * 21, 3, 3)).reshape(B, 63)
         root_aa = mat2aa(root_orient.reshape(B * 1, 3, 3)).reshape(B, 3)
 
-        pred_body = self.motion_prior.bm_dict['neutral'](
-            pose_body=pose_aa.float(),
-            pose_hand=None,
-            betas=beta.float(),
-            root_orient=root_aa.float(),
-            trans=trans.float())
+        pred_body = self.motion_prior.bm_dict['neutral'](pose_body=pose_aa.float(), pose_hand=None, betas=beta.float(), root_orient=root_aa.float(), trans=trans.float())
         return pred_body
 
     def get_obs(self, data_dict, t):
         # obs = torch.zeros(1, 447)
-        # 1: root 0: body 2: scene 
+        # 1: root 0: body 2: scene
         B, T, _ = data_dict['trans'].shape
         obs = []
         obs.append(np.array([1]))  # hq
-        obs.append(
-            np.concatenate([[1 if "root" in k else 0] *
-                            data_dict[k].reshape(B, T, -1).shape[-1]
-                            for k in self.motion_prior.data_names]))
+        obs.append(np.concatenate([[1 if "root" in k else 0] * data_dict[k].reshape(B, T, -1).shape[-1] for k in self.motion_prior.data_names]))
 
         if self.model_specs.get("use_contact", False):
             obs.append(np.array([0] * 24))
@@ -479,7 +378,7 @@ class KinNetHumorRes(KinNetBase):
 
             if self.cfg.model_specs.get("tcn_traj", False):
                 obs.append(np.array([1] * 3))  # Translation
-        
+
             if not self.cfg.model_specs.get("tcn_root_grad", False):
                 obs.append(np.array([1] * 9))  # Rotation
 
@@ -489,8 +388,7 @@ class KinNetHumorRes(KinNetBase):
         if self.model_specs.get("use_rr", False):
             obs.append(np.array([1] * 9))
 
-        if self.model_specs.get("use_3d_grad", False) or self.model_specs.get(
-                "use_3d_grad_adpt", False):
+        if self.model_specs.get("use_3d_grad", False) or self.model_specs.get("use_3d_grad_adpt", False):
             # obs.append(np.array([1] * 3))
             # obs.append(np.array([1] * 3))
             # obs.append(np.array([0] * 63))
@@ -508,35 +406,26 @@ class KinNetHumorRes(KinNetBase):
         elif self.model_specs.get("use_dir_sdf", False):
             obs.append(np.array([2] * 198))
 
-
         if self.model_specs.get("use_voxel", False):
             voxel_res = self.model_specs.get("voxel_res", 8)
             obs.append(np.array([2] * (voxel_res**3)))
 
-        obs = np.concatenate(obs)[None, ]
+        obs = np.concatenate(obs)[None,]
 
         return obs, self.sim
 
     def sample_valid_cam_x_y(self, cam_params, trans, offset):
         trans = trans.copy()
-        K, full_R, full_t = cam_params['K'], cam_params['full_R'], cam_params[
-            'full_t']
+        K, full_R, full_t = cam_params['K'], cam_params['full_R'], cam_params['full_t']
 
-        lower_left = np.array([[100, 0, 1], [100, 1080, 1], [1820, 0, 1],
-                               [1820, 1080, 1]])
+        lower_left = np.array([[100, 0, 1], [100, 1080, 1], [1820, 0, 1], [1820, 1080, 1]])
         ptr = lower_left.dot(np.linalg.inv(K).T)
 
-        heading_change = quaternion_matrix(
-            quaternion_about_axis(np.random.rand() * np.pi * 2,
-                                  [0, 0, 1]))[:3, :3]
-        new_trans = (np.matmul(trans + offset, heading_change.T) -
-                     offset).copy()
+        heading_change = quaternion_matrix(quaternion_about_axis(np.random.rand() * np.pi * 2, [0, 0, 1]))[:3, :3]
+        new_trans = (np.matmul(trans + offset, heading_change.T) - offset).copy()
         z = np.random.uniform(1.5, 6)
         frame_ptrs = ptr * z
-        x, y = np.random.uniform(np.min(frame_ptrs[:, 0]),
-                                 np.max(frame_ptrs[:, 0])), np.random.uniform(
-                                     np.min(frame_ptrs[:, 1]),
-                                     np.max(frame_ptrs[:, 2]))
+        x, y = np.random.uniform(np.min(frame_ptrs[:, 0]), np.max(frame_ptrs[:, 0])), np.random.uniform(np.min(frame_ptrs[:, 1]), np.max(frame_ptrs[:, 2]))
 
         new_ptr = (np.array([[x, y, z]]) - full_t).dot(full_R)
         x, y = new_ptr[0, 0], new_ptr[0, 1]
@@ -547,27 +436,15 @@ class KinNetHumorRes(KinNetBase):
         root_2d /= root_2d[:, :, 2:3]
         num_trys = 1
 
-        while np.isnan(root_2d).any() or np.sum(root_2d < 0) > 0 or np.sum(
-                trans_cam[..., 2] < 1
-        ) > 0 or np.sum(root_2d[..., 0] > 2200) or np.sum(
-                root_2d[..., 1] > 1200
-        ):  # should be at least 1.5 m from the camera and within the camera frame
-            heading_change = quaternion_matrix(
-                quaternion_about_axis(np.random.rand() * np.pi * 2,
-                                      [0, 0, 1]))[:3, :3]
-            new_trans = (np.matmul(trans + offset, heading_change.T) -
-                         offset).copy()
+        while np.isnan(root_2d).any() or np.sum(root_2d < 0) > 0 or np.sum(trans_cam[..., 2] < 1) > 0 or np.sum(root_2d[..., 0] > 2200) or np.sum(root_2d[..., 1] > 1200):  # should be at least 1.5 m from the camera and within the camera frame
+            heading_change = quaternion_matrix(quaternion_about_axis(np.random.rand() * np.pi * 2, [0, 0, 1]))[:3, :3]
+            new_trans = (np.matmul(trans + offset, heading_change.T) - offset).copy()
             z = np.random.uniform(1.5, 6)
             frame_ptrs = ptr * z
-            x, y = np.random.uniform(np.min(frame_ptrs[:, 0]),
-                                     np.max(
-                                         frame_ptrs[:, 0])), np.random.uniform(
-                                             np.min(frame_ptrs[:, 1]),
-                                             np.max(frame_ptrs[:, 2]))
+            x, y = np.random.uniform(np.min(frame_ptrs[:, 0]), np.max(frame_ptrs[:, 0])), np.random.uniform(np.min(frame_ptrs[:, 1]), np.max(frame_ptrs[:, 2]))
             new_ptr = (np.array([[x, y, z]]) - full_t).dot(full_R)
             x, y = new_ptr[0, 0], new_ptr[0, 1]
-            new_trans[:, :, :2] += np.array(
-                [x, y]) - new_trans[:, 0:1, :2]  # New trans in the world space
+            new_trans[:, :, :2] += np.array([x, y]) - new_trans[:, 0:1, :2]  # New trans in the world space
             trans_cam = ((new_trans + offset).dot(full_R.T) + full_t)
             root_2d = trans_cam.dot(K.T)
             root_2d /= root_2d[:, :, 2:3]
@@ -576,8 +453,7 @@ class KinNetHumorRes(KinNetBase):
                 print(f"!!!!!!!! stuck at {self.seq_name}")
                 self.scene_name = np.random.choice(PROX_SCENE)
                 self.load_camera_params(self.scene_name)
-                K, full_R, full_t = self.cam_params['K'], self.cam_params[
-                    'full_R'], self.cam_params['full_t']
+                K, full_R, full_t = self.cam_params['K'], self.cam_params['full_R'], self.cam_params['full_t']
         return x, y, heading_change
 
     def init_states(self, data_dict, random_cam=False):
@@ -586,9 +462,7 @@ class KinNetHumorRes(KinNetBase):
         # device = data_dict["pose_aa"].device
         device = self.device
 
-
-        self.seq_name = seq_name = data_dict['seq_name'][0] if isinstance(
-            data_dict['seq_name'], list) else data_dict['seq_name']
+        self.seq_name = seq_name = data_dict['seq_name'][0] if isinstance(data_dict['seq_name'], list) else data_dict['seq_name']
 
         betas = data_dict['beta'][0]
         if data_dict['gender'][0, 0] == 0:
@@ -606,202 +480,114 @@ class KinNetHumorRes(KinNetBase):
 
             pose_aa_empty = data_dict['pose_aa'].reshape(T, -1, 3)[0:1].to(self.device)
             self.motion_prior.bm_dict[gender].to(self.device)
-            pre_body = self.motion_prior.bm_dict[gender](
-                pose_body=pose_aa_empty[:, 1:22].float().reshape(1, -1),
-                pose_hand=None,
-                betas=betas[0:1].float(),
-                root_orient=pose_aa_empty[:, 0:1].float().reshape(1, -1))
+            pre_body = self.motion_prior.bm_dict[gender](pose_body=pose_aa_empty[:, 1:22].float().reshape(1, -1), pose_hand=None, betas=betas[0:1].float(), root_orient=pose_aa_empty[:, 0:1].float().reshape(1, -1))
             offset = pre_body.Jtr[0, 0]
 
             self.scene_name = np.random.choice(PROX_SCENE)
             self.load_camera_params(self.scene_name)
 
-            if np.random.uniform() < 0.5 or not self.model_specs.get(
-                    "load_scene", True):
-                data_dict[
-                    'load_scene'] = False  # sometimes, don't load any scene
+            if np.random.uniform() < 0.5 or not self.model_specs.get("load_scene", True):
+                data_dict['load_scene'] = False  # sometimes, don't load any scene
 
             curr_trans = data_dict['trans'].cpu().numpy().copy()
-            x, y, heading_change = self.sample_valid_cam_x_y(
-                self.cam_params, curr_trans,
-                offset.cpu().numpy())
+            x, y, heading_change = self.sample_valid_cam_x_y(self.cam_params, curr_trans, offset.cpu().numpy())
 
             if "obj_info" in data_dict:
-                heading_change = torch.from_numpy(heading_change).to(
-                    device).type(self.dtype)
+                heading_change = torch.from_numpy(heading_change).to(device).type(self.dtype)
                 obj_info = data_dict['obj_info']
-                data_dict['trans'] = torch.matmul(
-                    data_dict['trans'] + offset,
-                    heading_change.T) - offset  ## Offset strikes again!!!
-                new_root = torch.matmul(
-                    heading_change, data_dict['root_orient'].reshape(-1, 3, 3))
-                data_dict[
-                    'pose_aa'][:, :, :
-                               3] = tR.matrix_to_axis_angle(
-                                   new_root)
+                data_dict['trans'] = torch.matmul(data_dict['trans'] + offset, heading_change.T) - offset  ## Offset strikes again!!!
+                new_root = torch.matmul(heading_change, data_dict['root_orient'].reshape(-1, 3, 3))
+                data_dict['pose_aa'][:, :, :3] = tR.matrix_to_axis_angle(new_root)
                 data_dict['root_orient'] = new_root.reshape(B, T, 9)
 
                 for k, v in obj_info.items():
                     obj_pos_orig = v['obj_pose'][:, :3].copy()
-                    v['obj_pose'][:, 3:] = tR.matrix_to_quaternion(
-                        torch.matmul(
-                            heading_change,
-                            tR.quaternion_to_matrix(
-                                torch.from_numpy(v['obj_pose'][:, 3:])).to(
-                                    device))).cpu().numpy()  # Rotation
-                    v['obj_pose'][:, :3] = np.dot(
-                        v['obj_pose'][:, :3],
-                        heading_change.cpu().numpy().T)  # Translation
+                    v['obj_pose'][:, 3:] = tR.matrix_to_quaternion(torch.matmul(heading_change, tR.quaternion_to_matrix(torch.from_numpy(v['obj_pose'][:, 3:])).to(device))).cpu().numpy()  # Rotation
+                    v['obj_pose'][:, :3] = np.dot(v['obj_pose'][:, :3], heading_change.cpu().numpy().T)  # Translation
 
-                    v['obj_pose'][:, 0] += (
-                        x - data_dict['trans'][:, 0, 0]).cpu().numpy()
-                    v['obj_pose'][:, 1] += (
-                        y - data_dict['trans'][:, 0, 1]).cpu().numpy()
+                    v['obj_pose'][:, 0] += (x - data_dict['trans'][:, 0, 0]).cpu().numpy()
+                    v['obj_pose'][:, 1] += (y - data_dict['trans'][:, 0, 1]).cpu().numpy()
 
-                data_dict['trans'][:, :,
-                                   0] += (x - data_dict['trans'][:, 0, 0])
-                data_dict['trans'][:, :, 1] += (y - data_dict['trans'][:, 0, 1]
-                                                )  # This has to be indented.
+                data_dict['trans'][:, :, 0] += (x - data_dict['trans'][:, 0, 0])
+                data_dict['trans'][:, :, 1] += (y - data_dict['trans'][:, 0, 1])  # This has to be indented.
 
             else:
                 if data_dict['load_scene']:
                     scene_sdfs, obj_pos = load_simple_scene(self.scene_name)
 
-                    dist = get_sdf(scene_sdfs=scene_sdfs,
-                                   points=torch.tensor([[x, y, 0.5], [x, y, 0],
-                                                        [x, y, 1], [x, y, 1.5],
-                                                        [x, y, 0.3],
-                                                        [x, y, 0.7]]),
-                                   topk=1)
+                    dist = get_sdf(scene_sdfs=scene_sdfs, points=torch.tensor([[x, y, 0.5], [x, y, 0], [x, y, 1], [x, y, 1.5], [x, y, 0.3], [x, y, 0.7]]), topk=1)
 
                     while not torch.min(dist) > 0.2:
 
-                        x, y, heading_change = self.sample_valid_cam_x_y(
-                            self.cam_params, curr_trans,
-                            offset.cpu().numpy())
-                        dist = get_sdf(scene_sdfs=scene_sdfs,
-                                       points=torch.tensor([[x, y, 0.5],
-                                                            [x, y, 0],
-                                                            [x, y, 1],
-                                                            [x, y, 1.5],
-                                                            [x, y, 0.3],
-                                                            [x, y, 0.7]]),
-                                       topk=1)
+                        x, y, heading_change = self.sample_valid_cam_x_y(self.cam_params, curr_trans, offset.cpu().numpy())
+                        dist = get_sdf(scene_sdfs=scene_sdfs, points=torch.tensor([[x, y, 0.5], [x, y, 0], [x, y, 1], [x, y, 1.5], [x, y, 0.3], [x, y, 0.7]]), topk=1)
 
-                heading_change = torch.from_numpy(heading_change).to(
-                    device).type(self.dtype)
+                heading_change = torch.from_numpy(heading_change).to(device).type(self.dtype)
 
-                new_root = torch.matmul(
-                    heading_change, data_dict['root_orient'].reshape(-1, 3, 3))
+                new_root = torch.matmul(heading_change, data_dict['root_orient'].reshape(-1, 3, 3))
 
-                data_dict['trans'] = torch.matmul(
-                    data_dict['trans'] + offset,
-                    heading_change.T) - offset  ## Offset strikes again!!!
-                data_dict[
-                    'pose_aa'][:, :, :
-                               3] = tR.matrix_to_axis_angle(
-                                   new_root)
+                data_dict['trans'] = torch.matmul(data_dict['trans'] + offset, heading_change.T) - offset  ## Offset strikes again!!!
+                data_dict['pose_aa'][:, :, :3] = tR.matrix_to_axis_angle(new_root)
                 data_dict['root_orient'] = new_root.reshape(B, T, 9)
 
-                data_dict['trans'][:, :,
-                                   0] += (x - data_dict['trans'][:, 0, 0])
-                data_dict['trans'][:, :,
-                                   1] += (y - data_dict['trans'][:, 0, 1])
+                data_dict['trans'][:, :, 0] += (x - data_dict['trans'][:, 0, 0])
+                data_dict['trans'][:, :, 1] += (y - data_dict['trans'][:, 0, 1])
 
             data_dict['cam'] = self.cam_params
-            camera_params_torch = {
-                k:
-                torch.from_numpy(v).float().to(device) if isNpArray(v) else v
-                for k, v in self.cam_params.items()
-            }
+            camera_params_torch = {k: torch.from_numpy(v).float().to(device) if isNpArray(v) else v for k, v in self.cam_params.items()}
 
             # Always compute new joints since the rotation is now changed....
-            pose_mat = torch.cat([
-                data_dict['root_orient'].reshape(B, T, -1), data_dict['pose_body'].reshape(B, T, -1),
-                torch.eye(3).flatten()[None, None, ].repeat(B, T, 2).to(device)
-            ],dim=2)
+            pose_mat = torch.cat([data_dict['root_orient'].reshape(B, T, -1), data_dict['pose_body'].reshape(B, T, -1), torch.eye(3).flatten()[None, None,].repeat(B, T, 2).to(device)], dim=2)
 
-            self.human_b.update_model(data_dict['beta'][:, 0],
-                                        data_dict['gender'][:, 0])
-            fk_dict = self.human_b.fk_batch(pose_mat,
-                                            data_dict['trans'].clone(),
-                                            convert_to_mat=False)
+            self.human_b.update_model(data_dict['beta'][:, 0], data_dict['gender'][:, 0])
+            fk_dict = self.human_b.fk_batch(pose_mat, data_dict['trans'].clone(), convert_to_mat=False)
 
-            gt_joints = reorder_joints_to_humor(fk_dict['wbpos'].reshape(
-                B, T, -1), self.model, model="smpl")[:, :66]
+            gt_joints = reorder_joints_to_humor(fk_dict['wbpos'].reshape(B, T, -1), self.model, model="smpl")[:, :66]
             data_dict['joints'] = gt_joints.reshape(B, T, -1)
             ## ZL: Assuming alwyas single batch here. For different gender, need to update the code and swtich
-            trans_vel, joints_vel, root_orient_vel = estimate_velocities(
-                data_dict['trans'],
-                data_dict['root_orient'].reshape(B, T, 1, 3, 3),
-                data_dict['joints'].reshape(B, T, 22, 3),
-                30,
-                aa_to_mat=False)
+            trans_vel, joints_vel, root_orient_vel = estimate_velocities(data_dict['trans'], data_dict['root_orient'].reshape(B, T, 1, 3, 3), data_dict['joints'].reshape(B, T, 22, 3), 30, aa_to_mat=False)
             data_dict['trans_vel'] = trans_vel
             data_dict['joints_vel'] = joints_vel
             data_dict['root_orient_vel'] = root_orient_vel
 
-            K, full_R, full_t = camera_params_torch['K'], camera_params_torch[
-                'full_R'], camera_params_torch['full_t']
+            K, full_R, full_t = camera_params_torch['K'], camera_params_torch['full_R'], camera_params_torch['full_t']
 
-            wbpos = fk_dict['wbpos'].reshape(B, T, 24,
-                                                3)[:, :,
-                                                MUJOCO_2_SMPL].clone().float()
+            wbpos = fk_dict['wbpos'].reshape(B, T, 24, 3)[:, :, MUJOCO_2_SMPL].clone().float()
             wbpos_cam = wbpos @ full_R.T + full_t
 
             wbpos_cam_pic = wbpos_cam @ (K.T)[None].clone()
             z_norm = wbpos_cam_pic[:, :, :, 2:]
             wbpos2d = wbpos_cam_pic / z_norm
-            pred_joints2d = wbpos2d[:, :,self.smpl2op_map[self.smpl2op_map < 22]]
+            pred_joints2d = wbpos2d[:, :, self.smpl2op_map[self.smpl2op_map < 22]]
             wbpos_cam = wbpos_cam[:, :, self.smpl2op_map[self.smpl2op_map < 22]]
 
             if self.mode == "train":
                 noise_mul = self.model_specs.get('noise_mul', 1.0)
-                pred_joints2d[:, :, :, 2:3] = torch.rand(
-                    pred_joints2d[:, :, :, 2:3].shape
-                ) * noise_mul  # Need to better handle occlusion
+                pred_joints2d[:, :, :, 2:3] = torch.rand(pred_joints2d[:, :, :, 2:3].shape) * noise_mul  # Need to better handle occlusion
 
                 # pred_joints2d[:, :, :, :2] += torch.randn(pred_joints2d[:, :, :, :2].shape).to(self.device)
 
             data_dict['joints2d'] = smpl_op_to_op(pred_joints2d)
             data_dict['wbpos_cam'] = wbpos_cam
             data_dict['points3d'] = torch.zeros(B, T, 4096, 3)
-            data_dict[
-                'root_cam_rot'] = tR.matrix_to_axis_angle(
-                    torch.matmul(
-                        data_dict['root_orient'].float().reshape(-1, 3, 3),
-                        full_R.T)).reshape(B, T, 1, 3)
+            data_dict['root_cam_rot'] = tR.matrix_to_axis_angle(torch.matmul(data_dict['root_orient'].float().reshape(-1, 3, 3), full_R.T)).reshape(B, T, 1, 3)
         else:
             if not 'cam' in data_dict:
                 print("no camera in data!!!")
                 raise Exception()
             self.scene_name = data_dict['cam']['scene_name']
             self.cam_params = data_dict['cam']
-            camera_params_torch = {
-                k:
-                torch.from_numpy(v).float().to(device) if isNpArray(v) else v
-                for k, v in self.cam_params.items()
-            }
-
-
+            camera_params_torch = {k: torch.from_numpy(v).float().to(device) if isNpArray(v) else v for k, v in self.cam_params.items()}
 
         if not "wbpos_cam" in data_dict:
             # For loading the prox dataset.
-            full_R, full_t = camera_params_torch[
-                'full_R'], camera_params_torch['full_t']
-            wbpos = data_dict['joints'].reshape(
-                B, T, 22, 3)[:, :, self.smpl2op_map[self.smpl2op_map < 22]]
+            full_R, full_t = camera_params_torch['full_R'], camera_params_torch['full_t']
+            wbpos = data_dict['joints'].reshape(B, T, 22, 3)[:, :, self.smpl2op_map[self.smpl2op_map < 22]]
             wbpos_cam = wbpos.float() @ full_R.T + full_t
             data_dict['wbpos_cam'] = wbpos_cam
 
-            data_dict['root_cam_rot'] = tR.matrix_to_axis_angle(
-                    torch.matmul(
-                        data_dict['root_orient'].float().reshape(-1, 3, 3),
-                        full_R.T)).reshape(B, T, 1, 3)
-        humor_dict = {
-            k: data_dict[k][:, 0:1, :].clone()
-            for k in self.motion_prior.data_names
-        }
+            data_dict['root_cam_rot'] = tR.matrix_to_axis_angle(torch.matmul(data_dict['root_orient'].float().reshape(-1, 3, 3), full_R.T)).reshape(B, T, 1, 3)
+        humor_dict = {k: data_dict[k][:, 0:1, :].clone() for k in self.motion_prior.data_names}
         self.set_sim(humor_dict)
 
         data_dict["init_pose_aa"] = data_dict[f"pose_aa"][:, 0, :]
@@ -821,72 +607,44 @@ class KinNetHumorRes(KinNetBase):
         batch_size, seq_len, _ = data_dict["pose_aa"].shape  #
         res_init = self.init_states(data_dict)
         # input_dict = [data_dict[k][:, :, :].clone().reshape(batch_size, (seq_len ), -1) for k in feat_names]
-        input_dict = [
-            data_dict[k][:, :-1, :].clone().reshape(batch_size, (seq_len - 1),
-                                                    -1) for k in feat_names
-        ]
+        input_dict = [data_dict[k][:, :-1, :].clone().reshape(batch_size, (seq_len - 1), -1) for k in feat_names]
 
         input_vec = torch.cat(input_dict, dim=2)
 
         if self.mode == "train":
-            input_vec = input_vec + torch.randn(
-                input_vec.shape).to(input_vec) * 0.01
+            input_vec = input_vec + torch.randn(input_vec.shape).to(input_vec) * 0.01
         action = self.get_action(input_vec.squeeze())
-        humor_dict = {
-            k: data_dict[k][:, :-1, :].reshape(seq_len - 1, 1, -1).clone()
-            for k in self.motion_prior.data_names
-        }
+        humor_dict = {k: data_dict[k][:, :-1, :].reshape(seq_len - 1, 1, -1).clone() for k in self.motion_prior.data_names}
         self.set_sim(humor_dict)
         next_global_out = self.motion_prior.step_state(self.sim, action)
         B = next_global_out['pose_body'].size(0)
         # root_aa_t_1 = mat2aa(self.sim['root_orient'].reshape(-1, 3, 3)).reshape(B, -1, 3)
         # root_aa_t = mat2aa(next_global_out['root_orient'].reshape(-1, 3, 3)).reshape(B, -1, 3)
 
-        body_pose_aa = mat2aa(next_global_out['pose_body'].reshape(
-            B * 21, 3, 3)).reshape(B, 63)
-        root_aa = mat2aa(next_global_out['root_orient'].reshape(B, 3,
-                                                                3)).reshape(
-                                                                    B, 3)
+        body_pose_aa = mat2aa(next_global_out['pose_body'].reshape(B * 21, 3, 3)).reshape(B, 63)
+        root_aa = mat2aa(next_global_out['root_orient'].reshape(B, 3, 3)).reshape(B, 3)
         pose_aa = torch.cat([root_aa, body_pose_aa, torch.zeros(B, 6).to(root_aa)], dim=1)
 
-        qpos = smpl_to_qpose_torch(pose_aa,
-                                   self.model,
-                                   trans=next_global_out['trans'].reshape(
-                                       B, 3),
-                                   count_offset=True)
+        qpos = smpl_to_qpose_torch(pose_aa, self.model, trans=next_global_out['trans'].reshape(B, 3), count_offset=True)
         out_len = qpos.size(0)
         fk_result = self.humanoid.qpos_fk(qpos, to_numpy=False)
-        joints = reorder_joints_to_humor(
-            fk_result["wbpos"].clone(), self.model,
-            self.cfg.cc_cfg.robot_cfg.get("model", "smpl"))[:, :66]
+        joints = reorder_joints_to_humor(fk_result["wbpos"].clone(), self.model, self.cfg.cc_cfg.robot_cfg.get("model", "smpl"))[:, :66]
 
-        trans_vel, joints_vel, root_orient_vel = estimate_velocities(
-            next_global_out['trans'].reshape(1, (out_len), 3),
-            next_global_out['root_orient'].reshape(1, (out_len), 3, 3),
-            joints.reshape(1, (out_len), 22, 3),
-            FPS,
-            aa_to_mat=False)
+        trans_vel, joints_vel, root_orient_vel = estimate_velocities(next_global_out['trans'].reshape(1, (out_len), 3), next_global_out['root_orient'].reshape(1, (out_len), 3, 3), joints.reshape(1, (out_len), 22, 3), FPS, aa_to_mat=False)
         next_global_out['trans_vel'] = trans_vel
         next_global_out['joints_vel'] = joints_vel
         next_global_out['root_orient_vel'] = root_orient_vel
         next_global_out['joints'] = joints
 
-        feature_res = {
-            k: v.reshape(1, (out_len), 1, -1)
-            for k, v in next_global_out.items()
-        }
-        feature_res['action'] = action[None, ]
+        feature_res = {k: v.reshape(1, (out_len), 1, -1) for k, v in next_global_out.items()}
+        feature_res['action'] = action[None,]
 
-        feature_res = {
-            k: torch.cat([feature_res[k][:, 0:1], v], dim=1)
-            for k, v in feature_res.items()
-        }
+        feature_res = {k: torch.cat([feature_res[k][:, 0:1], v], dim=1) for k, v in feature_res.items()}
 
         return feature_res
 
     def motion_prior_loss(self, z, pm, pv):
-        log_prob = -torch.log(torch.sqrt(pv)) - math.log(math.sqrt(
-            2 * math.pi)) - ((z - pm)**2 / (2 * pv))
+        log_prob = -torch.log(torch.sqrt(pv)) - math.log(math.sqrt(2 * math.pi)) - ((z - pm)**2 / (2 * pv))
         log_prob = -torch.sum(log_prob, dim=-1)
         return torch.mean(log_prob)
 
@@ -913,30 +671,15 @@ class KinNetHumorRes(KinNetBase):
         full_R = R.dot(aR)
         full_t = R.dot(atr) + tr
 
-        cam_params = {
-            "K": K,
-            "full_R": full_R,
-            "full_t": full_t,
-            "img_w": 1980,
-            "img_h": 1080,
-            "scene_name": scene_name
-        }
+        cam_params = {"K": K, "full_R": full_R, "full_t": full_t, "img_w": 1980, "img_h": 1080, "scene_name": scene_name}
         self.cam_params = cam_params
 
-    def compute_loss_seq(self,
-                         feature_pred,
-                         data_dict,
-                         epoch=0,
-                         max_epoch=100):
+    def compute_loss_seq(self, feature_pred, data_dict, epoch=0, max_epoch=100):
 
         # pred_feats = self.motion_prior.dict2vec_input(feature_pred)
         # humor_feats = self.motion_prior.dict2vec_input(data)
-        cam_params = {
-            k: v.to(self.device) if torch.is_tensor(v) else v
-            for k, v in self.cam_params.items()
-        }
-        K, full_R, full_t = cam_params["K"], cam_params["full_R"], cam_params[
-            "full_t"]
+        cam_params = {k: v.to(self.device) if torch.is_tensor(v) else v for k, v in self.cam_params.items()}
+        K, full_R, full_t = cam_params["K"], cam_params["full_R"], cam_params["full_t"]
 
         B, seq_len, nq = feature_pred["trans"].shape
         weights = self.model_specs.get("weights", {})
@@ -958,24 +701,15 @@ class KinNetHumorRes(KinNetBase):
         ######################################## SMPL Joints ########################################
         if weights.get("loss_2d", 0) > 0 or weights.get("loss_chamfer", 0) > 0:
             gt_points3d = data_dict["points3d"].reshape(B, seq_len, -1, 3)
-            pose_aa_mat = feature_pred['pose_body'].reshape(
-                B * seq_len, -1, 3, 3)
+            pose_aa_mat = feature_pred['pose_body'].reshape(B * seq_len, -1, 3, 3)
             beta = data_dict['beta'].reshape(B * seq_len, -1)
-            root_orient = feature_pred['root_orient'].reshape(
-                B * seq_len, -1, 3, 3)
+            root_orient = feature_pred['root_orient'].reshape(B * seq_len, -1, 3, 3)
             trans = feature_pred['trans'].reshape(B * seq_len, 3)
 
-            pose_aa = mat2aa(pose_aa_mat.reshape(B * seq_len * 21, 3,
-                                                 3)).reshape(B * seq_len, 63)
-            root_aa = mat2aa(root_orient.reshape(B * seq_len * 1, 3,
-                                                 3)).reshape(B * seq_len, 3)
+            pose_aa = mat2aa(pose_aa_mat.reshape(B * seq_len * 21, 3, 3)).reshape(B * seq_len, 63)
+            root_aa = mat2aa(root_orient.reshape(B * seq_len * 1, 3, 3)).reshape(B * seq_len, 3)
 
-            pred_body = self.motion_prior.bm_dict['neutral'](
-                pose_body=pose_aa.float(),
-                pose_hand=None,
-                betas=beta.float(),
-                root_orient=root_aa.float(),
-                trans=trans.float())
+            pred_body = self.motion_prior.bm_dict['neutral'](pose_body=pose_aa.float(), pose_hand=None, betas=beta.float(), root_orient=root_aa.float(), trans=trans.float())
 
         if weights.get("loss_chamfer", 0) > 0:
             pred_verts = pred_body.v.reshape(B, seq_len, -1, 3).double()
@@ -997,39 +731,25 @@ class KinNetHumorRes(KinNetBase):
             pred_joints2d = pred_joints2d[:, :, :2] / z
 
             # pred_joints2d = feature_pred['pred_j2d'].reshape(b_size * seq_len, -1, 2)
-            joints2d_gt = data_dict['joints2d'].reshape(B * seq_len,
-                                                        -1).double()
+            joints2d_gt = data_dict['joints2d'].reshape(B * seq_len, -1).double()
             pred_joints2d = pred_joints2d.reshape(B * seq_len, -1)
-            joints2d_gt, pred_joints2d = gather_vecs(
-                [joints2d_gt, pred_joints2d], indices)
-            joints2d_gt, pred_joints2d = joints2d_gt.reshape(
-                -1, 25, 3), pred_joints2d.reshape(-1, 25, 2)
+            joints2d_gt, pred_joints2d = gather_vecs([joints2d_gt, pred_joints2d], indices)
+            joints2d_gt, pred_joints2d = joints2d_gt.reshape(-1, 25, 3), pred_joints2d.reshape(-1, 25, 2)
 
             inliers = joints2d_gt[:, :, 2] > 0.5
             pred_joints2d_inliders = pred_joints2d[inliers]
             joints2d_gt = joints2d_gt[inliers][:, :2]
-            loss_2d = torch.norm(pred_joints2d_inliders - joints2d_gt,
-                                 dim=1).mean()
+            loss_2d = torch.norm(pred_joints2d_inliders - joints2d_gt, dim=1).mean()
         ######################################## SMPL Joints ########################################
         if weights.get("prior_loss", 0) > 0:
             B_seq, T_seq, _ = feature_pred['trans'].shape
-            past_global_in = {
-                k: feature_pred[k].reshape(B_seq, T_seq, -1)[:, :-1]
-                for k in self.humor_models[0].data_names
-            }
-            next_global_in = {
-                k: feature_pred[k].reshape(B_seq, T_seq, -1)[:, 1:]
-                for k in self.humor_models[0].data_names
-            }
+            past_global_in = {k: feature_pred[k].reshape(B_seq, T_seq, -1)[:, :-1] for k in self.humor_models[0].data_names}
+            next_global_in = {k: feature_pred[k].reshape(B_seq, T_seq, -1)[:, 1:] for k in self.humor_models[0].data_names}
 
             # past_in, next_out = self.motion_prior.canonicalize_input_double(past_global_in, next_global_in, split_input=False, cam_params=cam_params)
-            past_in, next_out = self.humor_models[0].canonicalize_input_double(
-                past_global_in, next_global_in, split_input=False)
+            past_in, next_out = self.humor_models[0].canonicalize_input_double(past_global_in, next_global_in, split_input=False)
 
-            past_in, next_out = torch.cat(
-                [past_in, past_in[:, -2:-1]],
-                dim=1), torch.cat([next_out, next_out[:, -2:-1]],
-                                  dim=1)  # padding such that we can gather
+            past_in, next_out = torch.cat([past_in, past_in[:, -2:-1]], dim=1), torch.cat([next_out, next_out[:, -2:-1]], dim=1)  # padding such that we can gather
 
             past_in, next_out = gather_vecs([past_in, next_out], indices_end)
 
@@ -1040,48 +760,20 @@ class KinNetHumorRes(KinNetBase):
 
         if weights.get("l1_loss", 0) > 0:
             use_names = ['trans', 'root_orient']
-            root_feat_pred = torch.cat([
-                feature_pred[k].reshape([B, seq_len, -1]).clone()
-                for k in use_names
-            ],
-                                       dim=2).reshape(B * seq_len, -1)
-            root_humor_gt = torch.cat([
-                data_dict[k].reshape([B, seq_len, -1]).clone()
-                for k in use_names
-            ],
-                                      dim=2).reshape(B * seq_len, -1)
+            root_feat_pred = torch.cat([feature_pred[k].reshape([B, seq_len, -1]).clone() for k in use_names], dim=2).reshape(B * seq_len, -1)
+            root_humor_gt = torch.cat([data_dict[k].reshape([B, seq_len, -1]).clone() for k in use_names], dim=2).reshape(B * seq_len, -1)
             ############################################################################
             use_names = ['pose_body', "joints"]
-            body_feat_pred = torch.cat([
-                feature_pred[k].reshape([B, seq_len, -1]).clone()
-                for k in use_names
-            ],
-                                       dim=2).reshape(B * seq_len, -1)
+            body_feat_pred = torch.cat([feature_pred[k].reshape([B, seq_len, -1]).clone() for k in use_names], dim=2).reshape(B * seq_len, -1)
 
-            body_humor_gt = torch.cat([
-                data_dict[k].reshape([B, seq_len, -1]).clone()
-                for k in use_names
-            ],
-                                      dim=2).reshape(B * seq_len, -1)
+            body_humor_gt = torch.cat([data_dict[k].reshape([B, seq_len, -1]).clone() for k in use_names], dim=2).reshape(B * seq_len, -1)
             #############################################################################
             use_names = ['root_orient_vel', "joints_vel"]
-            vel_pred = torch.cat([
-                feature_pred[k].reshape([B, seq_len, -1]).clone()
-                for k in use_names
-            ],
-                                 dim=2).reshape(B * seq_len, -1)
+            vel_pred = torch.cat([feature_pred[k].reshape([B, seq_len, -1]).clone() for k in use_names], dim=2).reshape(B * seq_len, -1)
 
-            vel_gt = torch.cat([
-                data_dict[k].reshape([B, seq_len, -1]).clone()
-                for k in use_names
-            ],
-                               dim=2).reshape(B * seq_len, -1)
+            vel_gt = torch.cat([data_dict[k].reshape([B, seq_len, -1]).clone() for k in use_names], dim=2).reshape(B * seq_len, -1)
 
-            l1_loss = ((root_feat_pred - root_humor_gt).abs()).mean(
-                dim=1) * self.model_specs.get("root_l1_mul", 0.1) + (
-                    (body_feat_pred - body_humor_gt).abs()).mean(dim=1) + (
-                        (vel_pred - vel_gt).abs()).mean(
-                            dim=1) * self.model_specs.get("vel_l1_mul", 0.5)
+            l1_loss = ((root_feat_pred - root_humor_gt).abs()).mean(dim=1) * self.model_specs.get("root_l1_mul", 0.1) + ((body_feat_pred - body_humor_gt).abs()).mean(dim=1) + ((vel_pred - vel_gt).abs()).mean(dim=1) * self.model_specs.get("vel_l1_mul", 0.5)
 
             # l1_loss = ((root_feat_pred - root_humor_gt).abs()).mean(dim=1) * self.model_specs.get("root_l1_mul", 1) + ((body_feat_pred - body_humor_gt).abs()).mean(dim=1)
             # l1_loss = ((root_feat_pred - root_humor_gt).abs()).mean(dim=1) * self.model_specs.get("root_l1_mul", 1)
@@ -1096,12 +788,8 @@ class KinNetHumorRes(KinNetBase):
             pose_pred = feature_pred["pose_body"].reshape(B, seq_len, 21, 3, 3)
             joints_tgt = data_dict["joints"].reshape(B, seq_len, 22, 3)
             pose_tgt = data_dict["pose_body"].reshape(B, seq_len, 21, 3, 3)
-            diff_joints = torch.abs((joints_pred - joints_pred[..., 0:1, :]) -
-                                    (joints_tgt -
-                                     joints_tgt[..., 0:1, :])).reshape(
-                                         B * seq_len, -1).mean(-1)
-            diff_pose = ((pose_pred - pose_tgt).abs()).reshape(
-                B * seq_len, -1).mean(-1)
+            diff_joints = torch.abs((joints_pred - joints_pred[..., 0:1, :]) - (joints_tgt - joints_tgt[..., 0:1, :])).reshape(B * seq_len, -1).mean(-1)
+            diff_pose = ((pose_pred - pose_tgt).abs()).reshape(B * seq_len, -1).mean(-1)
             l1_loss_local = (diff_joints + diff_pose)
 
             l1_loss_local = l1_loss_local[:, None] * weighting
@@ -1111,20 +799,11 @@ class KinNetHumorRes(KinNetBase):
             use_names = ['trans', 'root_orient', 'pose_body', "joints"]
             sequential_sim = data_dict['sim_humor_dict']
 
-            sequential_sim_vec = torch.cat([
-                sequential_sim[k][:, :].reshape(B_seq * T_seq, -1)
-                for k in use_names
-            ],
-                                           dim=1)
+            sequential_sim_vec = torch.cat([sequential_sim[k][:, :].reshape(B_seq * T_seq, -1) for k in use_names], dim=1)
 
-            sequential_out_vec = torch.cat([
-                feature_pred[k][:, :].reshape(B_seq * T_seq, -1)
-                for k in use_names
-            ],
-                                           dim=1)
+            sequential_out_vec = torch.cat([feature_pred[k][:, :].reshape(B_seq * T_seq, -1) for k in use_names], dim=1)
 
-            l1_loss_dyna = ((sequential_sim_vec -
-                             sequential_out_vec)**2).mean(1)[:, None]
+            l1_loss_dyna = ((sequential_sim_vec - sequential_out_vec)**2).mean(1)[:, None]
             l1_loss_dyna = gather_vecs([l1_loss_dyna], indices)[0].mean()
 
         total_loss = 0
@@ -1155,34 +834,22 @@ class KinNetHumorRes(KinNetBase):
         r_pos_loss = root_pos_loss(gt_qpos, pred_qpos).mean()
         r_rot_loss = root_orientation_loss(gt_qpos, pred_qpos).mean()
         p_rot_loss = pose_rot_loss(gt_qpos, pred_qpos).mean()  # pose loss
-        ee_loss = end_effector_pos_loss(gt_wbpos,
-                                        pred_wbpos).mean()  # End effector loss
+        ee_loss = end_effector_pos_loss(gt_wbpos, pred_wbpos).mean()  # End effector loss
 
         loss = w_rp * r_pos_loss + w_rr * r_rot_loss + w_p * p_rot_loss + w_ee * ee_loss
 
-        return loss, [
-            i.item() for i in [r_pos_loss, r_rot_loss, p_rot_loss, ee_loss]
-        ]
+        return loss, [i.item() for i in [r_pos_loss, r_rot_loss, p_rot_loss, ee_loss]]
 
     def compute_metrics(self, feature_pred, data):
-        pred_jpos = (feature_pred["joints"].squeeze().reshape(
-            (-1, 22, 3)).clone().clone())
+        pred_jpos = (feature_pred["joints"].squeeze().reshape((-1, 22, 3)).clone().clone())
         gt_jpos = data["joints"].squeeze().reshape((-1, 22, 3)).clone()
-        mpjpe_global = (np.linalg.norm(
-            (pred_jpos - gt_jpos).detach().cpu().numpy(), axis=2).mean() *
-                        1000)
+        mpjpe_global = (np.linalg.norm((pred_jpos - gt_jpos).detach().cpu().numpy(), axis=2).mean() * 1000)
 
         pred_jpos_local = pred_jpos - pred_jpos[:, 0:1, :]
         gt_jpos_local = gt_jpos - gt_jpos[:, 0:1, :]
-        mpjpe_local = (np.linalg.norm(
-            (pred_jpos_local - gt_jpos_local).detach().cpu().numpy(),
-            axis=2).mean() * 1000)
-        acc_err = (compute_error_accel(pred_jpos.detach().cpu().numpy(),
-                                       gt_jpos.detach().cpu().numpy()).mean() *
-                   1000)
-        vel_err = (compute_error_vel(pred_jpos.detach().cpu().numpy(),
-                                     gt_jpos.detach().cpu().numpy()).mean() *
-                   1000)
+        mpjpe_local = (np.linalg.norm((pred_jpos_local - gt_jpos_local).detach().cpu().numpy(), axis=2).mean() * 1000)
+        acc_err = (compute_error_accel(pred_jpos.detach().cpu().numpy(), gt_jpos.detach().cpu().numpy()).mean() * 1000)
+        vel_err = (compute_error_vel(pred_jpos.detach().cpu().numpy(), gt_jpos.detach().cpu().numpy()).mean() * 1000)
         return {
             "mpjpe_local": mpjpe_local,
             "mpjpe_global": mpjpe_global,

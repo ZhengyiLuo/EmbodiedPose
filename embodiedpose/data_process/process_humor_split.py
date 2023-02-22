@@ -20,23 +20,21 @@ from mujoco_py import load_model_from_path
 
 sys.path.append(os.getcwd())
 
-from copycat.utils.torch_ext import dict_to_numpy
-from copycat.utils.transform_utils import smooth_smpl_quat_window
-from copycat.utils.image_utils import get_chunk_with_overlap
+from uhc.utils.torch_ext import dict_to_numpy
+from uhc.utils.transform_utils import smooth_smpl_quat_window
+from uhc.utils.image_utils import get_chunk_with_overlap
 from scipy.ndimage import gaussian_filter1d
-from copycat.smpllib.smpl_robot import Robot
-from copycat.smpllib.torch_smpl_humanoid import Humanoid
+from uhc.smpllib.smpl_robot import Robot
+from uhc.smpllib.torch_smpl_humanoid import Humanoid
 import mujoco_py
-from copycat.utils.transform_utils import (convert_aa_to_orth6d,
-                                           rotation_matrix_to_angle_axis)
-from copycat.smpllib.smpl_parser import SMPL_Parser
-from copycat.utils.torch_geometry_transforms import (
-    angle_axis_to_rotation_matrix)
+from uhc.utils.transform_utils import (convert_aa_to_orth6d, rotation_matrix_to_angle_axis)
+from uhc.smpllib.smpl_parser import SMPL_Parser
+from uhc.utils.torch_geometry_transforms import (angle_axis_to_rotation_matrix)
 
-from copycat.smpllib.smpl_mujoco import smpl_to_qpose_torch
+from uhc.smpllib.smpl_mujoco import smpl_to_qpose_torch
 from embodiedpose.models.humor.utils.humor_mujoco import reorder_joints_to_humor, MUJOCO_2_SMPL
 from embodiedpose.models.humor.utils.velocities import estimate_velocities
-from copycat.utils.config_utils.copycat_config import Config as CC_Config
+from uhc.utils.config_utils.copycat_config import Config as CC_Config
 
 np.random.seed(1)
 LEFT_RIGHT_IDX = [
@@ -132,10 +130,7 @@ SEQS = list(SEQ_LENGTHS.keys())
 
 TRIM_EDGES = 90
 IMG_WIDTH = 1920
-OP_FLIP_MAP = [
-    0, 1, 5, 6, 7, 2, 3, 4, 8, 12, 13, 14, 9, 10, 11, 16, 15, 18, 17, 22, 23,
-    24, 19, 20, 21
-]
+OP_FLIP_MAP = [0, 1, 5, 6, 7, 2, 3, 4, 8, 12, 13, 14, 9, 10, 11, 16, 15, 18, 17, 22, 23, 24, 19, 20, 21]
 
 
 def left_to_rigth_euler(pose_euler):
@@ -150,18 +145,14 @@ def transform_smpl(smpl_dict, R, t, seq_length, offset=[0, 0, 0]):
     offset_rep = offset.repeat(seq_length, 1)[:, :, None]
 
     R_rep = R.repeat(seq_length, 1, 1)
-    pose_orth = angle_axis_to_rotation_matrix(
-        torch.from_numpy(smpl_dict['pose'].astype(np.float32)[:, :3]).reshape(
-            -1, 3))
+    pose_orth = angle_axis_to_rotation_matrix(torch.from_numpy(smpl_dict['pose'].astype(np.float32)[:, :3]).reshape(-1, 3))
     pose_orth = pose_orth[:, :3, :3]
     pose_orth = torch.bmm(R_rep, pose_orth)
-    trans = torch.from_numpy(smpl_dict['trans'].astype(np.float32)).reshape(
-        -1, 3, 1)
+    trans = torch.from_numpy(smpl_dict['trans'].astype(np.float32)).reshape(-1, 3, 1)
     trans = torch.bmm(R_rep, (trans + offset_rep)) - offset_rep
     trans = trans[:, :, 0] + t[None]
 
-    pose = np.array(
-        rotation_matrix_to_angle_axis(pose_orth).reshape(seq_length, 3))
+    pose = np.array(rotation_matrix_to_angle_axis(pose_orth).reshape(seq_length, 3))
     trans = np.array(trans)
     return pose, trans
 
@@ -173,8 +164,7 @@ def smpl_2_entry(
     pose_aa = smpl_dict["pose"]
     trans = smpl_dict["trans"]
     seq_len = pose_aa.shape[0]
-    shape = smpl_dict["shape"] if "shape" in smpl_dict else np.zeros(
-        [seq_len, 10])
+    shape = smpl_dict["shape"] if "shape" in smpl_dict else np.zeros([seq_len, 10])
     # mean_shape = shape.mean(axis=0)
     mean_shape = shape[0:10].mean(axis=0)
     # import ipdb; ipdb.set_trace()
@@ -188,26 +178,16 @@ def smpl_2_entry(
         return None
     pose_aa = torch.from_numpy(pose_aa).float()
     pose_seq_6d = convert_aa_to_orth6d(pose_aa).reshape(-1, 144)
-    smpl_robot.load_from_skeleton(torch.from_numpy(mean_shape[None, ]),
-                                  gender=[0],
-                                  objs_info=None)
-    model = mujoco_py.load_model_from_xml(
-        smpl_robot.export_xml_string().decode("utf-8"))
+    smpl_robot.load_from_skeleton(torch.from_numpy(mean_shape[None,]), gender=[0], objs_info=None)
+    model = mujoco_py.load_model_from_xml(smpl_robot.export_xml_string().decode("utf-8"))
     humanoid = Humanoid(model=model)
-    qpos = smpl_to_qpose_torch(pose_aa,
-                               model,
-                               trans=torch.from_numpy(trans),
-                               count_offset=True)
+    qpos = smpl_to_qpose_torch(pose_aa, model, trans=torch.from_numpy(trans), count_offset=True)
     fk_result = humanoid.qpos_fk(qpos, to_numpy=False)
 
     root_orient = pose_aa[:, :3]
-    joints_humor = reorder_joints_to_humor(
-        fk_result['wbpos'].clone(), model,
-        cc_cfg.robot_cfg.get("model", "smpl"))[:, :66]
+    joints_humor = reorder_joints_to_humor(fk_result['wbpos'].clone(), model, cc_cfg.robot_cfg.get("model", "smpl"))[:, :66]
 
-    trans_vel, joints_humor_vel, root_orient_vel = estimate_velocities(
-        torch.from_numpy(trans[None]), root_orient[None], joints_humor[None],
-        30)
+    trans_vel, joints_humor_vel, root_orient_vel = estimate_velocities(torch.from_numpy(trans[None]), root_orient[None], joints_humor[None], 30)
     trans_vel = trans_vel[0]
     joints_humor_vel = joints_humor_vel[0]
     root_orient_vel = root_orient_vel[0]
@@ -255,8 +235,7 @@ def read_keypoints(keypoint_fn):
         data = json.load(keypoint_file)
 
     if len(data['people']) == 0:
-        print('WARNING: Found no keypoints in %s! Returning zeros!' %
-              (keypoint_fn))
+        print('WARNING: Found no keypoints in %s! Returning zeros!' % (keypoint_fn))
         return np.zeros((25, 3), dtype=np.float)
 
     person_data = data['people'][0]
@@ -289,15 +268,7 @@ def load_camera_params(scene_name):
     full_R = R.dot(aR)
     full_t = R.dot(atr) + tr
 
-    cam_params = {
-        "K": K,
-        "R": R,
-        "tr": tr,
-        "aR": aR,
-        "atr": atr,
-        "full_R": full_R,
-        "full_t": full_t
-    }
+    cam_params = {"K": K, "R": R, "tr": tr, "aR": aR, "atr": atr, "full_R": full_R, "full_t": full_t}
     return cam_params
 
 
@@ -308,8 +279,7 @@ def load_humanoid():
         data_dir=osp.join(cc_cfg.base_dir, "data/smpl"),
         masterfoot=cc_cfg.masterfoot,
     )
-    model = mujoco_py.load_model_from_xml(
-        smpl_robot.export_xml_string().decode("utf-8"))
+    model = mujoco_py.load_model_from_xml(smpl_robot.export_xml_string().decode("utf-8"))
     humanoid = Humanoid(model=model)
     return smpl_robot, humanoid, cc_cfg
 
@@ -317,9 +287,7 @@ def load_humanoid():
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--dataset',
-                        choices=["prox", "proxd"],
-                        default="proxd")
+    parser.add_argument('--dataset', choices=["prox", "proxd"], default="proxd")
     args = parser.parse_args()
 
     smpl_robot, humanoid, cc_cfg = load_humanoid()
@@ -347,15 +315,9 @@ if __name__ == "__main__":
         #     continue
         # color_images = glob.glob(
         #     osp.join(prox_base, "recordings", seq, "Color", "*.jpg"))
-        result_path = osp.join(
-            humor_base,
-            f'out/{args.dataset}_fitting_sub/results_out/{seq}_*/stage3_results.npz'
-        )
+        result_path = osp.join(humor_base, f'out/{args.dataset}_fitting_sub/results_out/{seq}_*/stage3_results.npz')
         # result_path = osp.join(humor_base, f'out/{args.dataset}_fitting_sub2/results_out/{seq}_*/proxd_results.npz')
-        obs_path = osp.join(
-            humor_base,
-            f'out/{args.dataset}_fitting_sub/results_out/{seq}_*/observations.npz'
-        )
+        obs_path = osp.join(humor_base, f'out/{args.dataset}_fitting_sub/results_out/{seq}_*/observations.npz')
         motion_files = sorted(glob.glob(result_path))
         obs_files = sorted(glob.glob(obs_path))
 
@@ -376,20 +338,13 @@ if __name__ == "__main__":
         seq_length = SEQ_LENGTHS[seq] - TRIM_EDGES * 2
         cur_subj_id = seq.split('_')[1]
         gender = 'female' if int(cur_subj_id) in FEMALE_SUBJ_IDS else 'male'
-        smpl_dict = {
-            'pose': np.zeros((seq_length, 72)),
-            'trans': np.zeros((seq_length, 3)),
-            'shape': np.zeros((seq_length, 16)),
-            'joints2d': np.zeros((seq_length, 25, 3)),
-            'gender': gender
-        }
+        smpl_dict = {'pose': np.zeros((seq_length, 72)), 'trans': np.zeros((seq_length, 3)), 'shape': np.zeros((seq_length, 16)), 'joints2d': np.zeros((seq_length, 25, 3)), 'gender': gender}
         if args.dataset == 'proxd':
             smpl_dict['points3d'] = np.zeros((seq_length, 4096, 3))
 
         files = zip(motion_files, obs_files)
 
-        chunk_bounds, selects = get_chunk_with_overlap(seq_length, 60, 10,
-                                                       True)
+        chunk_bounds, selects = get_chunk_with_overlap(seq_length, 60, 10, True)
         # print(chunk_bounds)
         # chunk_bounds, selects = get_chunk_with_overlap(seq_length, 60, 0, True)
         overlap = 0
@@ -408,72 +363,43 @@ if __name__ == "__main__":
             motion = np.load(motion_file)
             obs = np.load(obs_file)
             len_seq = smpl_dict['joints2d'][start:end].shape[0]
-            smpl_dict['joints2d'][start:end] = obs["joints2d"][overlap:(
-                len_seq + overlap)]
+            smpl_dict['joints2d'][start:end] = obs["joints2d"][overlap:(len_seq + overlap)]
 
-            smpl_dict['pose'][start:end, :3] = motion['root_orient'][overlap:(
-                len_seq + overlap)]
-            smpl_dict['pose'][start:end,
-                              3:66] = motion['pose_body'][overlap:(len_seq +
-                                                                   overlap)]
-            smpl_dict['trans'][start:end] = motion['trans'][overlap:(len_seq +
-                                                                     overlap)]
+            smpl_dict['pose'][start:end, :3] = motion['root_orient'][overlap:(len_seq + overlap)]
+            smpl_dict['pose'][start:end, 3:66] = motion['pose_body'][overlap:(len_seq + overlap)]
+            smpl_dict['trans'][start:end] = motion['trans'][overlap:(len_seq + overlap)]
 
             smpl_dict['shape'][start:end] = motion['betas']  # Betas!!
             # smpl_dict['shape'][start:end] = motion['betas'][overlap:(len_seq + overlap)] # Betas!!
             if args.dataset == 'proxd':
-                smpl_dict['points3d'][start:end] = obs["points3d"][overlap:(
-                    len_seq + overlap)]
+                smpl_dict['points3d'][start:end] = obs["points3d"][overlap:(len_seq + overlap)]
             # print(start, end, motion_file)
             if curr_seq[0] != 0:
                 window = 15
-                smpl_dict['trans'][(curr_seq[0] - window):(
-                    curr_seq[0] + window)] = gaussian_filter1d(
-                        smpl_dict['trans'][(curr_seq[0] -
-                                            window):(curr_seq[0] + window)],
-                        1,
-                        axis=0)
-                smpl_dict['pose'][(curr_seq[0] - window):(
-                    curr_seq[0] + window)] = smooth_smpl_quat_window(
-                        smpl_dict['pose'][(curr_seq[0] - window):(curr_seq[0] +
-                                                                  window)],
-                        sigma=2).reshape(-1, 72)
+                smpl_dict['trans'][(curr_seq[0] - window):(curr_seq[0] + window)] = gaussian_filter1d(smpl_dict['trans'][(curr_seq[0] - window):(curr_seq[0] + window)], 1, axis=0)
+                smpl_dict['pose'][(curr_seq[0] - window):(curr_seq[0] + window)] = smooth_smpl_quat_window(smpl_dict['pose'][(curr_seq[0] - window):(curr_seq[0] + window)], sigma=2).reshape(-1, 72)
 
         print(chunk_bounds.tolist())
-        kp2d_files = sorted(
-            glob.glob(osp.join(prox_base, "keypoints", seq, "*")))
-        kp_data = np.array([
-            read_keypoints(kp2d_file)
-            for kp2d_file in kp2d_files[TRIM_EDGES:-TRIM_EDGES]
-        ])
+        kp2d_files = sorted(glob.glob(osp.join(prox_base, "keypoints", seq, "*")))
+        kp_data = np.array([read_keypoints(kp2d_file) for kp2d_file in kp2d_files[TRIM_EDGES:-TRIM_EDGES]])
         kp_data = kp_data[:, OP_FLIP_MAP, :]
         kp_data[:, :, 0] = IMG_WIDTH - kp_data[:, :, 0]
         smpl_dict['joints2d'] = kp_data
 
         ####################################################### Use HRNet
-        kp_2d = np.load(
-            open(f"/hdd/zen/data/video_pose/prox/dekr_res/{seq}.pkl",
-                 "rb"))[TRIM_EDGES:-TRIM_EDGES]
+        kp_2d = np.load(open(f"/hdd/zen/data/video_pose/prox/dekr_res/{seq}.pkl", "rb"))[TRIM_EDGES:-TRIM_EDGES]
         smpl_dict['joints2d'][:, 1:15] = kp_2d
 
         # if (seq_length != end):
         # import ipdb; ipdb.set_trace()
 
         # Transform from the camera to world coordinate system
-        pose, trans = transform_smpl(smpl_dict,
-                                     R,
-                                     t,
-                                     seq_length,
-                                     offset=humanoid.model.body_pos[1])
+        pose, trans = transform_smpl(smpl_dict, R, t, seq_length, offset=humanoid.model.body_pos[1])
         smpl_dict['pose'][:, :3] = pose
         smpl_dict['trans'] = trans
 
         # Align the ground plane to the xy plane of the world coordinate system
-        pose, trans = transform_smpl(smpl_dict,
-                                     aR,
-                                     at,
-                                     seq_length,
-                                     offset=humanoid.model.body_pos[1])
+        pose, trans = transform_smpl(smpl_dict, aR, at, seq_length, offset=humanoid.model.body_pos[1])
         smpl_dict['pose'][:, :3] = pose
         smpl_dict['trans'] = trans
         entry = smpl_2_entry(seq, smpl_dict)
@@ -485,8 +411,7 @@ if __name__ == "__main__":
         #     counter += 1
 
     print(data_res.keys())
-    output_file_name = osp.join(prox_base,
-                                f'thirdeye_anns_{args.dataset}_overlap.pkl')
+    output_file_name = osp.join(prox_base, f'thirdeye_anns_{args.dataset}_overlap.pkl')
     # output_file_name = osp.join(prox_base, f'thirdeye_anns_{args.dataset}_single.pkl')
     # output_file_name = osp.join(prox_base,
     # f'thirdeye_anns_{args.dataset}_single2.pkl')

@@ -1,11 +1,10 @@
 import torch
-from copycat.utils.torch_ext import batch_to
+from uhc.utils.torch_ext import batch_to
 
 
 def estimate_advantages(rewards, masks, values, gamma, tau):
     device = rewards.device
-    rewards, masks, values = batch_to(torch.device('cpu'), rewards, masks,
-                                      values)
+    rewards, masks, values = batch_to(torch.device('cpu'), rewards, masks, values)
     tensor_type = type(rewards)
     deltas = tensor_type(rewards.size(0), 1)
     advantages = tensor_type(rewards.size(0), 1)

@@ -5,9 +5,9 @@ import pickle as pk
 import joblib
 from collections import defaultdict
 
-from copycat.data_loaders.dataset_amass_batch import DatasetAMASSBatch
+from uhc.data_loaders.dataset_amass_batch import DatasetAMASSBatch
 import torch
-from copycat.utils.math_utils import (
+from uhc.utils.math_utils import (
     de_heading,
     transform_vec,
     quaternion_multiply,
@@ -18,6 +18,7 @@ from copycat.utils.math_utils import (
 
 
 class VideoPoseDataset(DatasetAMASSBatch):
+
     def process_data_list(self, data_list):
         data_processed = defaultdict(dict)
         # pbar = tqdm(all_data)
@@ -33,9 +34,7 @@ class VideoPoseDataset(DatasetAMASSBatch):
             traj_pos = self.get_traj_de_heading(gt_qpos)
 
             traj_root_vel = self.get_root_vel(gt_qpos)
-            traj = np.hstack(
-                (traj_pos,
-                 traj_root_vel))  # Trajectory and trajectory root velocity
+            traj = np.hstack((traj_pos, traj_root_vel))  # Trajectory and trajectory root velocity
             data_processed["wbpos"][take] = curr_data["wbpos"]
             data_processed["wbquat"][take] = curr_data["wbquat"]
             data_processed["bquat"][take] = curr_data["bquat"]
@@ -89,8 +88,7 @@ class VideoPoseDataset(DatasetAMASSBatch):
 
             v = (next_qpos[:3] - curr_qpos[:3]) / self.dt
             v = transform_vec(v, curr_qpos[3:7], "root").copy()
-            qrel = quaternion_multiply(next_qpos[3:7],
-                                       quaternion_inverse(curr_qpos[3:7]))
+            qrel = quaternion_multiply(next_qpos[3:7], quaternion_inverse(curr_qpos[3:7]))
             axis, angle = rotation_from_quaternion(qrel, True)
 
             if angle > np.pi:  # -180 < angle < 180
@@ -103,9 +101,7 @@ class VideoPoseDataset(DatasetAMASSBatch):
 
             traj_root_vel.append(np.concatenate((v, rv)))
 
-        traj_root_vel.append(
-            traj_root_vel[-1].copy()
-        )  # copy last one since there will be one less through finite difference
+        traj_root_vel.append(traj_root_vel[-1].copy())  # copy last one since there will be one less through finite difference
         traj_root_vel = np.vstack(traj_root_vel)
         return traj_root_vel
 

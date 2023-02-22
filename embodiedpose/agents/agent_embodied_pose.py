@@ -33,32 +33,34 @@ import time
 os.environ["OMP_NUM_THREADS"] = "1"
 sys.path.append(os.getcwd())
 
-from copycat.khrylib.utils import to_device, create_logger, ZFilter
-from copycat.khrylib.models.mlp import MLP
-from copycat.khrylib.rl.core import estimate_advantages
-from copycat.khrylib.utils.torch import *
-from copycat.khrylib.utils.memory import Memory
-from copycat.khrylib.rl.core import LoggerRL
-from copycat.khrylib.rl.core.critic import Value
-from copycat.khrylib.utils import get_eta_str
-from copycat.utils.flags import flags
-from copycat.khrylib.utils.logger import create_logger
+from uhc.khrylib.utils import to_device, create_logger, ZFilter
+from uhc.khrylib.models.mlp import MLP
+from uhc.khrylib.rl.core import estimate_advantages
+from uhc.khrylib.utils.torch import *
+from uhc.khrylib.utils.memory import Memory
+from uhc.khrylib.rl.core import LoggerRL
+from uhc.khrylib.rl.core.critic import Value
+from uhc.khrylib.utils import get_eta_str
+from uhc.utils.flags import flags
+from uhc.khrylib.utils.logger import create_logger
 
-from copycat.envs import env_dict
-from copycat.models.kin_policy import KinPolicy
-from copycat.agents.agent_uhm import AgentUHM
+from uhc.envs import env_dict
+from uhc.models.kin_policy import KinPolicy
+from uhc.agents.agent_uhm import AgentUHM
 
 from embodiedpose.data_loaders import data_dict
 from embodiedpose.envs import env_dict
 from embodiedpose.models import policy_dict
 from embodiedpose.core.reward_function import reward_func
 from embodiedpose.core.trajbatch_humor import TrajBatchHumor
-from copycat.smpllib.smpl_eval import compute_metrics
+from uhc.smpllib.smpl_eval import compute_metrics
 from embodiedpose.models.humor.utils.humor_mujoco import MUJOCO_2_SMPL
-from copycat.utils.math_utils import smpl_op_to_op
+from uhc.utils.math_utils import smpl_op_to_op
 from embodiedpose.models.humor.utils.humor_mujoco import OP_14_to_OP_12
 
-class AgentScenePretrain(AgentUHM):
+
+class AgentEmbodiedPose(AgentUHM):
+
     def __init__(self, cfg, dtype, device, mode="train", checkpoint_epoch=0):
         self.cfg = cfg
         self.device = device
@@ -125,8 +127,7 @@ class AgentScenePretrain(AgentUHM):
 
     def setup_reward(self):
         cfg, device, dtype = self.cfg, self.device, self.dtype
-        self.expert_reward = expert_reward = reward_func[
-            cfg.policy_specs['reward_id']]
+        self.expert_reward = expert_reward = reward_func[cfg.policy_specs['reward_id']]
 
     def setup_env(self):
         cfg, device, dtype = self.cfg, self.device, self.dtype
@@ -137,34 +138,21 @@ class AgentScenePretrain(AgentUHM):
 
             context_sample = self.policy_net.init_context(data_sample, random_cam=True)
         self.cc_cfg = cfg.cc_cfg
-        self.env = env_dict[self.cfg.env_name](cfg,
-                                               init_context=context_sample,
-                                               cc_iter=cfg.policy_specs.get(
-                                                   'cc_iter', -1),
-                                               mode="train",
-                                               agent=self)
+        self.env = env_dict[self.cfg.env_name](cfg, init_context=context_sample, cc_iter=cfg.policy_specs.get('cc_iter', -1), mode="train", agent=self)
         self.env.seed(cfg.seed)
 
     def setup_policy(self):
         cfg, device, dtype = self.cfg, self.device, self.dtype
-        data_sample = self.data_loader.sample_seq(
-            fr_num=20, fr_start=self.global_start_fr)
+        data_sample = self.data_loader.sample_seq(fr_num=20, fr_start=self.global_start_fr)
 
-        self.policy_net = policy_net = policy_dict[cfg.policy_name](
-            cfg,
-            data_sample,
-            device=device,
-            dtype=dtype,
-            mode=self.mode,
-            agent=self)
+        self.policy_net = policy_net = policy_dict[cfg.policy_name](cfg, data_sample, device=device, dtype=dtype, mode=self.mode, agent=self)
         to_device(device, self.policy_net)
 
     def setup_value(self):
         cfg, device, dtype = self.cfg, self.device, self.dtype
         state_dim = self.policy_net.state_dim
         action_dim = self.env.action_space.shape[0]
-        self.value_net = Value(
-            MLP(state_dim, self.cc_cfg.value_hsize, self.cc_cfg.value_htype))
+        self.value_net = Value(MLP(state_dim, self.cc_cfg.value_hsize, self.cc_cfg.value_htype))
         to_device(device, self.value_net)
 
     def setup_data_loader(self):
@@ -176,14 +164,12 @@ class AgentScenePretrain(AgentUHM):
         if len(train_files_path) > 0:
             for train_file, dataset_name in train_files_path:
 
-                data_loader = data_dict[dataset_name](cfg, [train_file],
-                                                      multiproess=False)
+                data_loader = data_dict[dataset_name](cfg, [train_file], multiproess=False)
                 self.train_data_loaders.append(data_loader)
 
         if len(test_files_path) > 0:
             for test_file, dataset_name in test_files_path:
-                data_loader = data_dict[dataset_name](cfg, [test_file],
-                                                      multiproess=False)
+                data_loader = data_dict[dataset_name](cfg, [test_file], multiproess=False)
                 self.test_data_loaders.append(data_loader)
 
         self.data_loader = np.random.choice(self.train_data_loaders)
@@ -197,14 +183,9 @@ class AgentScenePretrain(AgentUHM):
                 self.policy_net.set_mode('test')
                 curr_env.set_mode('test')
 
-                context_sample = loader.get_sample_from_key(take_key=take_key,
-                                                            full_sample=True,
-                                                            return_batch=True)
+                context_sample = loader.get_sample_from_key(take_key=take_key, full_sample=True, return_batch=True)
 
-                curr_env.load_context(
-                    self.policy_net.init_context(
-                        context_sample,
-                        random_cam=(not "cam" in context_sample)))
+                curr_env.load_context(self.policy_net.init_context(context_sample, random_cam=(not "cam" in context_sample)))
 
                 state = curr_env.reset()
 
@@ -212,10 +193,10 @@ class AgentScenePretrain(AgentUHM):
                     state = self.running_state(state)
                 fail = False
                 for t in range(10000):
-                    
-                    res['gt'].append(curr_env.context_dict['qpos'][curr_env.cur_t]) 
+
+                    res['gt'].append(curr_env.context_dict['qpos'][curr_env.cur_t])
                     res['target'].append(curr_env.target['qpos'])
-                    res['pred'].append(curr_env.get_humanoid_qpos()) # at time step 0, this is the initial state. At timestep 1, this is the predicted state at timestep 0 (which corresponds to 0) 
+                    res['pred'].append(curr_env.get_humanoid_qpos())  # at time step 0, this is the initial state. At timestep 1, this is the predicted state at timestep 0 (which corresponds to 0)
 
                     if 'joints_gt' in curr_env.context_dict:
                         res["gt_jpos"].append(smpl_op_to_op(self.env.context_dict['joints_gt'][self.env.cur_t].copy()))
@@ -227,20 +208,14 @@ class AgentScenePretrain(AgentUHM):
                     # res["pred_jpos"].append(curr_env.get_wbody_pos().copy())
 
                     if self.cfg.model_specs.get("use_tcn", False):
-                        res['world_body_pos'].append(
-                            self.env.pred_tcn['world_body_pos'].copy()[None, ])
-                        res['world_trans'].append(
-                            self.env.pred_tcn['world_trans'].copy()[None, ])
+                        res['world_body_pos'].append(self.env.pred_tcn['world_body_pos'].copy()[None,])
+                        res['world_trans'].append(self.env.pred_tcn['world_trans'].copy()[None,])
 
                     # t_s = time.time()
                     state_var = tensor(state).unsqueeze(0).double()
                     trans_out = self.trans_policy(state_var)
-                    action = self.policy_net.select_action(
-                        trans_out, mean_action=True)[0].numpy()
-                    action = int(
-                        action
-                    ) if self.policy_net.type == 'discrete' else action.astype(
-                        np.float64)
+                    action = self.policy_net.select_action(trans_out, mean_action=True)[0].numpy()
+                    action = int(action) if self.policy_net.type == 'discrete' else action.astype(np.float64)
                     next_state, env_reward, done, info = curr_env.step(action)
 
                     if self.cfg.render:
@@ -253,11 +228,11 @@ class AgentScenePretrain(AgentUHM):
                         fail = info['fail']
 
                     # if info['end']: # Always carry till the end
-                    if done: 
-                        ###### When done, collect the last simulated state. 
-                        res['gt'].append(curr_env.context_dict['qpos'][curr_env.cur_t]) 
+                    if done:
+                        ###### When done, collect the last simulated state.
+                        res['gt'].append(curr_env.context_dict['qpos'][curr_env.cur_t])
                         res['target'].append(curr_env.target['qpos'])
-                        res['pred'].append(curr_env.get_humanoid_qpos()) # at time step 0, this is the initial state. At timestep 1, this is the predicted state at timestep 0 (which corresponds to 0) 
+                        res['pred'].append(curr_env.get_humanoid_qpos())  # at time step 0, this is the initial state. At timestep 1, this is the predicted state at timestep 0 (which corresponds to 0)
 
                         if 'joints_gt' in curr_env.context_dict:
                             res["gt_jpos"].append(smpl_op_to_op(self.env.context_dict['joints_gt'][self.env.cur_t].copy()))
@@ -268,7 +243,7 @@ class AgentScenePretrain(AgentUHM):
 
                         # res["gt_jpos"].append(curr_env.gt_targets['wbpos'][curr_env.cur_t].copy())
                         # res["pred_jpos"].append(curr_env.get_wbody_pos().copy())
-                        ###### When done, collect the last simulated state. 
+                        ###### When done, collect the last simulated state.
 
                         res = {k: np.vstack(v) for k, v in res.items()}
                         # print(info['percent'], context_dict['ar_qpos'].shape[1], loader.curr_key, np.mean(res['reward']))
@@ -287,8 +262,7 @@ class AgentScenePretrain(AgentUHM):
                 queue = multiprocessing.Queue()
                 for i in range(num_jobs - 1):
                     worker_args = (queue, num_samples, full_sample)
-                    worker = multiprocessing.Process(
-                        target=self.data_collect_worker, args=worker_args)
+                    worker = multiprocessing.Process(target=self.data_collect_worker, args=worker_args)
                     worker.start()
                 res = self.data_collect_worker(None, num_samples, full_sample)
                 data_collected += res
@@ -309,18 +283,12 @@ class AgentScenePretrain(AgentUHM):
                 self.set_mode('train')
                 for i in range(num_samples):
                     if full_sample:
-                        context_sample = loader.sample_seq(
-                            full_sample=full_sample, full_fr_num=True)
+                        context_sample = loader.sample_seq(full_sample=full_sample, full_fr_num=True)
                     else:
-                        context_sample = loader.sample_seq(
-                            fr_num=self.cfg.fr_num, full_fr_num=True)
+                        context_sample = loader.sample_seq(fr_num=self.cfg.fr_num, full_fr_num=True)
 
-                    context_sample = self.policy_net.init_context(
-                        context_sample, random_cam=True)
-                    res.append({
-                        k: v.numpy() if torch.is_tensor(v) else v
-                        for k, v in context_sample.items()
-                    })
+                    context_sample = self.policy_net.init_context(context_sample, random_cam=True)
+                    res.append({k: v.numpy() if torch.is_tensor(v) else v for k, v in context_sample.items()})
 
                 if queue == None:
                     return res
@@ -338,11 +306,9 @@ class AgentScenePretrain(AgentUHM):
         while logger.num_steps < min_batch_size:
             self.data_loader = np.random.choice(self.train_data_loaders)
 
-            context_sample = self.data_loader.sample_seq(
-                fr_num=self.cfg.fr_num)
+            context_sample = self.data_loader.sample_seq(fr_num=self.cfg.fr_num)
             # should not try to fix the height during training!!!
-            ar_context = self.policy_net.init_context(
-                context_sample, random_cam=(not "cam" in context_sample))
+            ar_context = self.policy_net.init_context(context_sample, random_cam=(not "cam" in context_sample))
             self.env.load_context(ar_context)
             state = self.env.reset()
             self.policy_net.reset()
@@ -359,25 +325,15 @@ class AgentScenePretrain(AgentUHM):
                 #     1, 1 - self.noise_rate)
 
                 mean_action = True
-                action = self.policy_net.select_action(trans_out,
-                                                       mean_action)[0].numpy()
+                action = self.policy_net.select_action(trans_out, mean_action)[0].numpy()
 
-                action = int(
-                    action
-                ) if self.policy_net.type == 'discrete' else action.astype(
-                    np.float64)
+                action = int(action) if self.policy_net.type == 'discrete' else action.astype(np.float64)
                 #################### ZL: Jank Code.... ####################
-                # Gather GT data. Since this is before step, the gt needs to be advanced by 1. This corresponds to the next state, 
-                # as we collect the data after the step. 
-                humor_target = np.concatenate([
-                    self.env.context_dict[k][self.env.cur_t + 1].flatten()
-                    for k in self.env.agg_data_names
-                ])
+                # Gather GT data. Since this is before step, the gt needs to be advanced by 1. This corresponds to the next state,
+                # as we collect the data after the step.
+                humor_target = np.concatenate([self.env.context_dict[k][self.env.cur_t + 1].flatten() for k in self.env.agg_data_names])
 
-                sim_humor_state = np.concatenate([
-                    self.env.cur_humor_state[k].numpy().flatten()
-                    for k in self.env.motion_prior.data_names
-                ])
+                sim_humor_state = np.concatenate([self.env.cur_humor_state[k].numpy().flatten() for k in self.env.motion_prior.data_names])
 
                 #################### ZL: Jank Code.... ####################
 
@@ -387,9 +343,8 @@ class AgentScenePretrain(AgentUHM):
                     next_state = self.running_state(next_state)
                 # use custom or env reward
                 if self.custom_reward is not None:
-                    # Reward is not used. 
-                    c_reward, c_info = self.custom_reward(
-                        self.env, state, action, info)
+                    # Reward is not used.
+                    c_reward, c_info = self.custom_reward(self.env, state, action, info)
                     reward = c_reward
                 else:
                     c_reward, c_info = 0.0, np.array([0.0])
@@ -407,16 +362,14 @@ class AgentScenePretrain(AgentUHM):
 
                 mask = 0 if done else 1
                 exp = 1 - mean_action
-                self.push_memory(memory, state, action, mask, next_state,
-                                 reward, exp, humor_target, sim_humor_state)
+                self.push_memory(memory, state, action, mask, next_state, reward, exp, humor_target, sim_humor_state)
 
                 if pid == 0 and self.render:
                     for _ in range(10):
                         self.env.render()
 
                 if done:
-                    freq_dict[self.data_loader.curr_key].append(
-                        [info['percent'], self.data_loader.fr_start])
+                    freq_dict[self.data_loader.curr_key].append([info['percent'], self.data_loader.fr_start])
                     # print(self.data_loader.fr_start, self.data_loader.curr_key, info['percent'], self.env.cur_t)
                     break
 
@@ -430,14 +383,9 @@ class AgentScenePretrain(AgentUHM):
         else:
             return memory, logger, freq_dict
 
-    def push_memory(self, memory, state, action, mask, next_state, reward, exp,
-                    humor_target, sim_humor_state):
-        v_meta = np.array([
-            self.data_loader.curr_take_ind, self.data_loader.fr_start,
-            self.data_loader.fr_num
-        ])
-        memory.push(state, action, mask, next_state, reward, exp, v_meta,
-                    humor_target, sim_humor_state)
+    def push_memory(self, memory, state, action, mask, next_state, reward, exp, humor_target, sim_humor_state):
+        v_meta = np.array([self.data_loader.curr_take_ind, self.data_loader.fr_start, self.data_loader.fr_num])
+        memory.push(state, action, mask, next_state, reward, exp, v_meta, humor_target, sim_humor_state)
 
     def optimize_policy(self, epoch):
         cfg, device, dtype = self.cfg, self.device, self.dtype
@@ -445,14 +393,11 @@ class AgentScenePretrain(AgentUHM):
         t0 = time.time()
         self.pre_epoch_update(epoch)
 
-
         self.cfg.lr = 5.e-5
         self.cfg.model_specs['weights']['l1_loss'] = 5
         self.cfg.model_specs['weights']['l1_loss_local'] = 0
         self.cfg.model_specs['weights']['loss_tcn'] = 1
-        self.cfg.model_specs['weights'][
-            'prior_loss'] = 0.0001 if self.cfg.model_specs.get(
-                "use_prior", False) else 0
+        self.cfg.model_specs['weights']['prior_loss'] = 0.0001 if self.cfg.model_specs.get("use_prior", False) else 0
         self.cfg.model_specs['weights']['loss_2d'] = 0
         self.cfg.model_specs['weights']['loss_chamfer'] = 0
         self.cfg.policy_specs["num_step_update"] = 10
@@ -464,9 +409,7 @@ class AgentScenePretrain(AgentUHM):
         cfg.eval_n_epochs = 100
         # cfg.policy_specs['min_batch_size'] = 500
 
-        self.cfg.fr_num = 300 if self.iter < self.num_supervised else max(
-            int(min(self.iter / 100, 1) *
-                self.fr_num), self.cfg.data_specs.get("t_min", 30))
+        self.cfg.fr_num = 300 if self.iter < self.num_supervised else max(int(min(self.iter / 100, 1) * self.fr_num), self.cfg.data_specs.get("t_min", 30))
 
         if self.iter >= self.num_warmup:
             self.env.simulate = True
@@ -483,18 +426,12 @@ class AgentScenePretrain(AgentUHM):
         batch, log = self.sample(cfg.policy_specs['min_batch_size'])
 
         if cfg.policy_specs['end_reward']:
-            self.env.end_reward = log.avg_c_reward * cfg.policy_specs[
-                'gamma'] / (1 - cfg.policy_specs['gamma'])
+            self.env.end_reward = log.avg_c_reward * cfg.policy_specs['gamma'] / (1 - cfg.policy_specs['gamma'])
         """update networks"""
         t1 = time.time()
         self.update_params(batch)
         t2 = time.time()
-        info = {
-            'log': log,
-            'T_sample': t1 - t0,
-            'T_update': t2 - t1,
-            'T_total': t2 - t0
-        }
+        info = {'log': log, 'T_sample': t1 - t0, 'T_update': t2 - t1, 'T_total': t2 - t0}
 
         if (self.iter + 1) % cfg.save_n_epochs == 0:
             self.save_checkpoint(self.iter)
@@ -514,23 +451,17 @@ class AgentScenePretrain(AgentUHM):
         t0 = time.time()
         to_train(*self.update_modules)
         states = torch.from_numpy(batch.states).to(self.dtype).to(self.device)
-        actions = torch.from_numpy(batch.actions).to(self.dtype).to(
-            self.device)
-        rewards = torch.from_numpy(batch.rewards).to(self.dtype).to(
-            self.device)
+        actions = torch.from_numpy(batch.actions).to(self.dtype).to(self.device)
+        rewards = torch.from_numpy(batch.rewards).to(self.dtype).to(self.device)
         masks = torch.from_numpy(batch.masks).to(self.dtype).to(self.device)
         exps = torch.from_numpy(batch.exps).to(self.dtype).to(self.device)
-        v_metas = torch.from_numpy(batch.v_metas).to(self.dtype).to(
-            self.device)
-        humor_target = torch.from_numpy(batch.humor_target).to(self.dtype).to(
-            self.device)
-        sim_humor_state = torch.from_numpy(batch.sim_humor_state).to(
-            self.dtype).to(self.device)
+        v_metas = torch.from_numpy(batch.v_metas).to(self.dtype).to(self.device)
+        humor_target = torch.from_numpy(batch.humor_target).to(self.dtype).to(self.device)
+        sim_humor_state = torch.from_numpy(batch.sim_humor_state).to(self.dtype).to(self.device)
 
         with to_test(*self.update_modules):
             with torch.no_grad():
-                values = self.value_net(
-                    self.trans_value(states[:, :self.policy_net.state_dim]))
+                values = self.value_net(self.trans_value(states[:, :self.policy_net.state_dim]))
 
         seq_data = (masks, v_metas, rewards)
         self.policy_net.set_mode('train')
@@ -540,14 +471,10 @@ class AgentScenePretrain(AgentUHM):
 
         if self.cfg.policy_specs.get("rl_update", False):
             print("RL:")
-            advantages, returns = estimate_advantages(rewards, masks, values,
-                                                      self.gamma, self.tau)
+            advantages, returns = estimate_advantages(rewards, masks, values, self.gamma, self.tau)
             self.update_policy(states, actions, returns, advantages, exps)
 
-        if self.cfg.policy_specs.get(
-                "init_update", False) or self.cfg.policy_specs.get(
-                    "step_update", False) or self.cfg.policy_specs.get(
-                        "full_update", False):
+        if self.cfg.policy_specs.get("init_update", False) or self.cfg.policy_specs.get("step_update", False) or self.cfg.policy_specs.get("full_update", False):
             print("Supervised:")
 
         # if self.cfg.policy_specs.get("init_update", False):
@@ -555,13 +482,7 @@ class AgentScenePretrain(AgentUHM):
 
         if self.cfg.policy_specs.get("step_update", False):
 
-            self.policy_net.update_supervised(
-                states,
-                humor_target,
-                sim_humor_state,
-                seq_data,
-                num_epoch=int(self.cfg.policy_specs.get("num_step_update",
-                                                        10)))
+            self.policy_net.update_supervised(states, humor_target, sim_humor_state, seq_data, num_epoch=int(self.cfg.policy_specs.get("num_step_update", 10)))
 
         # if self.cfg.policy_specs.get("full_update", False):
         #     self.policy_net.train_full_supervised(self.cfg, self.data_loader, device=self.device, dtype=self.dtype, num_epoch=1, scheduled_sampling=0.3)

@@ -35,9 +35,9 @@ SMPL_PARENTS = [
 # SMPL_PATH = './copycat/body_models/smpl'
 # VPOSER_PATH = './copycat/body_models/vposer_v1_0'
 
-SMPLH_PATH = '../Copycat/data/smpl/smplh'
-SMPLX_PATH = '../Copycat/data/smpl/smplx'
-SMPL_PATH = '../Copycat/data/smpl/'
+SMPLH_PATH = 'UniversalHumanoidControl/data/smpl/smplh'
+SMPLX_PATH = 'UniversalHumanoidControl/data/smpl/smplx'
+SMPL_PATH = 'UniversalHumanoidControl/data/smpl/'
 
 # chosen virtual mocap markers that are "keypoints" to work with
 KEYPT_VERTS = [

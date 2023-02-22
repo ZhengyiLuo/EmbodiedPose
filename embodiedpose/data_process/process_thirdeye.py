@@ -7,10 +7,10 @@ import os.path as osp
 import torch
 import mujoco_py
 
-from copycat.smpllib.smpl_mujoco import qpos_to_smpl
-from copycat.utils.config_utils.copycat_config import Config as CC_Config
-from copycat.smpllib.smpl_robot import Robot
-from copycat.smpllib.torch_smpl_humanoid import Humanoid
+from uhc.smpllib.smpl_mujoco import qpos_to_smpl
+from uhc.utils.config_utils.copycat_config import Config as CC_Config
+from uhc.smpllib.smpl_robot import Robot
+from uhc.smpllib.torch_smpl_humanoid import Humanoid
 
 
 def load_humanoid():
@@ -20,11 +20,9 @@ def load_humanoid():
         data_dir=osp.join(cc_cfg.base_dir, "data/smpl"),
         masterfoot=cc_cfg.masterfoot,
     )
-    model = mujoco_py.load_model_from_xml(
-        smpl_robot.export_xml_string().decode("utf-8"))
+    model = mujoco_py.load_model_from_xml(smpl_robot.export_xml_string().decode("utf-8"))
     humanoid = Humanoid(model=model)
     return smpl_robot, humanoid, cc_cfg
-
 
 
 if __name__ == '__main__':
@@ -53,15 +51,11 @@ if __name__ == '__main__':
         qpos = thirdeye_results[seq_name]['pred']
         if thirdeye_results[seq_name]['succ']:
             success_cnt += 1
-        
-        smpl_robot.load_from_skeleton(torch.from_numpy(mean_shape[None, ]),
-                                      gender=[0],
-                                      objs_info=None)
-        model = mujoco_py.load_model_from_xml(
-            smpl_robot.export_xml_string().decode("utf-8"))
 
-        pose_aa, trans = qpos_to_smpl(qpos, model,
-                                      cc_cfg.robot_cfg.get("model", "smpl"))
+        smpl_robot.load_from_skeleton(torch.from_numpy(mean_shape[None,]), gender=[0], objs_info=None)
+        model = mujoco_py.load_model_from_xml(smpl_robot.export_xml_string().decode("utf-8"))
+
+        pose_aa, trans = qpos_to_smpl(qpos, model, cc_cfg.robot_cfg.get("model", "smpl"))
 
         female_subjects_ids = [162, 3452, 159, 3403]
         subject_id = int(seq_name.split('_')[-2])
@@ -82,9 +76,6 @@ if __name__ == '__main__':
         print(seq_name, "gender:", gender)
     data['success_rate'] = success_cnt / 60
     out_path = osp.join(res_dir, f'thirdeye_final_processed.pkl')
-    joblib.dump(
-        data,
-        out_path)
+    joblib.dump(data, out_path)
     print('Saved')
     print(thirdeye_path, out_path)
-    

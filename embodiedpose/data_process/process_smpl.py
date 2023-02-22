@@ -22,10 +22,9 @@ from embodiedpose.envs.humanoid_v2 import HumanoidEnv
 from embodiedpose.data_loaders.statereg_dataset import Dataset
 from embodiedpose.utils.statear_smpl_config import Config
 from embodiedpose.utils import get_qvel_fd, de_heading
-from copycat.utils.numpy_smpl_humanoid import Humanoid
+from uhc.utils.numpy_smpl_humanoid import Humanoid
 from embodiedpose.utils.transformation import quaternion_multiply, quaternion_inverse, rotation_from_quaternion
-from embodiedpose.utils.transform_utils import (
-    convert_6d_to_mat, compute_orth6d_from_rotation_matrix, convert_quat_to_6d)
+from embodiedpose.utils.transform_utils import (convert_6d_to_mat, compute_orth6d_from_rotation_matrix, convert_quat_to_6d)
 
 
 def get_head_vel(head_pose, dt=1 / 30):
@@ -37,11 +36,9 @@ def get_head_vel(head_pose, dt=1 / 30):
         curr_qpos = head_pose[i, :]
         next_qpos = head_pose[i + 1, :]
         v = (next_qpos[:3] - curr_qpos[:3]) / dt
-        v = transform_vec(v, curr_qpos[3:7],
-                          'heading')  # get velocity within the body frame
+        v = transform_vec(v, curr_qpos[3:7], 'heading')  # get velocity within the body frame
 
-        qrel = quaternion_multiply(next_qpos[3:7],
-                                   quaternion_inverse(curr_qpos[3:7]))
+        qrel = quaternion_multiply(next_qpos[3:7], quaternion_inverse(curr_qpos[3:7]))
         axis, angle = rotation_from_quaternion(qrel, True)
 
         if angle > np.pi:  # -180 < angle < 180
@@ -54,8 +51,7 @@ def get_head_vel(head_pose, dt=1 / 30):
 
         head_vels.append(np.concatenate((v, rv)))
 
-    head_vels.append(head_vels[-1].copy(
-    ))  # copy last one since there will be one less through finite difference
+    head_vels.append(head_vels[-1].copy())  # copy last one since there will be one less through finite difference
     head_vels = np.vstack(head_vels)
     return head_vels
 
@@ -77,9 +73,7 @@ def get_root_relative_head(root_poses, head_poses):
         diff_loc = transform_vec(diff, head_rot, "heading")
 
         root_quat = root_qpos[3:7].copy()
-        root_quat_local = quaternion_multiply(
-            quaternion_inverse(head_rot),
-            root_quat)  # ???? Should it be flipped?
+        root_quat_local = quaternion_multiply(quaternion_inverse(head_rot), root_quat)  # ???? Should it be flipped?
         axis, angle = rotation_from_quaternion(root_quat_local, True)
 
         if angle > np.pi:  # -180 < angle < 180
@@ -88,8 +82,7 @@ def get_root_relative_head(root_poses, head_poses):
             angle += 2 * np.pi
 
         rv = axis * angle
-        rv = transform_vec(rv, head_rot,
-                           'root')  # root 2 head diff in head's frame
+        rv = transform_vec(rv, head_rot, 'root')  # root 2 head diff in head's frame
 
         root_pose = np.concatenate((diff_loc, rv))
         res_root_poses.append(root_pose)
@@ -111,8 +104,7 @@ def root_from_relative_head(root_relative, head_poses):
 
         root_pos = quat_mul_vec(q_heading, root_pos_delta) + head_pos
         root_rot_delta = quat_mul_vec(head_rot, root_rot_delta)
-        root_rot = quaternion_multiply(head_rot,
-                                       quat_from_expmap(root_rot_delta))
+        root_rot = quaternion_multiply(head_rot, quat_from_expmap(root_rot_delta))
         root_pose = np.hstack([root_pos, root_rot])
         root_poses.append(root_pose)
     return np.array(root_poses)
@@ -136,8 +128,7 @@ def get_obj_relative_pose(obj_poses, ref_poses, num_objs=1):
             diff_loc = transform_vec(diff, ref_rot, "heading")
 
             obj_quat = obj_qpos[oidx * 7 + 3:oidx * 7 + 7].copy()
-            obj_quat_local = quaternion_multiply(quaternion_inverse(q_heading),
-                                                 obj_quat)
+            obj_quat_local = quaternion_multiply(quaternion_inverse(q_heading), obj_quat)
             obj_pose = np.concatenate((diff_loc, obj_quat_local))
             obs.append(obj_pose)
 
@@ -152,12 +143,8 @@ def post_process_expert(expert, obj_pose, num_objs=1):
     orig_traj = expert['qpos']
     root_pose = orig_traj[:, :7]
     head_vels = get_head_vel(head_pose)
-    obj_relative_head = get_obj_relative_pose(obj_pose,
-                                              head_pose,
-                                              num_objs=num_objs)
-    obj_relative_root = get_obj_relative_pose(obj_pose,
-                                              root_pose,
-                                              num_objs=num_objs)
+    obj_relative_head = get_obj_relative_pose(obj_pose, head_pose, num_objs=num_objs)
+    obj_relative_root = get_obj_relative_pose(obj_pose, root_pose, num_objs=num_objs)
     root_relative_2_head = get_root_relative_head(root_pose, head_pose)
     expert['head_vels'] = head_vels
     expert['obj_head_relative_poses'] = obj_relative_head
@@ -173,7 +160,7 @@ def string_to_one_hot(all_classes, class_name):
         index = all_classes.index(class_name)
         hot[index] = 1
 
-    return hot[None, ]
+    return hot[None,]
 
 
 if __name__ == "__main__":
@@ -186,7 +173,7 @@ if __name__ == "__main__":
     # data_load = joblib.load("/hdd/zen/data/ActBound/AMASS/relive_mocap_qpos_grad.pkl")
     # expert_data = joblib.load('/hdd/zen/data/Reallite/contextegopose/ReliveDataset/features/expert_all.p')
     # data_load = joblib.load("/hdd/zen/data/ActBound/AMASS/amass_copycat_take3.pkl")
-    data_load = joblib.load("/hdd/zen/data/ActBound/AMASS/relive_copycat.pkl")
+    data_load = joblib.load("/hdd/zen/data/ActBound/AMASS/relive_uhc.pkl")
 
     expert_data = None
 
@@ -198,18 +185,11 @@ if __name__ == "__main__":
     for k in cfg.meta['video_mocap_sync'].keys():
         a, take = k.split('-')
         if a == "None":
-            of_folder = os.path.join(
-                "/hdd/zen/data/Reallite/contextegopose/EgoPoseDataset/",
-                'fpv_of')
+            of_folder = os.path.join("/hdd/zen/data/Reallite/contextegopose/EgoPoseDataset/", 'fpv_of')
         else:
-            of_folder = os.path.join(
-                "/hdd/zen/data/Reallite/contextegopose/ReliveDataset/",
-                'fpv_of')
+            of_folder = os.path.join("/hdd/zen/data/Reallite/contextegopose/ReliveDataset/", 'fpv_of')
         im_offset, lb, ub = cfg.meta['video_mocap_sync'][k]
-        of_files = np.array(
-            sorted(glob.glob(osp.join(of_folder, take,
-                                      "*.npy"))))[lb + im_offset:ub +
-                                                  im_offset].tolist()
+        of_files = np.array(sorted(glob.glob(osp.join(of_folder, take, "*.npy"))))[lb + im_offset:ub + im_offset].tolist()
         of_files_dict[k] = of_files
 
     num_sample = 0
@@ -237,23 +217,12 @@ if __name__ == "__main__":
         num_frames = expert['qpos'].shape[0]
         if "obj_pose" in v and not v['obj_pose'] is None:
             expert['obj_pose'] = v['obj_pose']
-            expert['action_one_hot'] = np.repeat(np.array(
-                string_to_one_hot(cfg.all_actions, action)),
-                                                 num_frames,
-                                                 axis=0)
-            expert = post_process_expert(expert, v['obj_pose'],
-                                         int(v['obj_pose'].shape[1] / 7))
+            expert['action_one_hot'] = np.repeat(np.array(string_to_one_hot(cfg.all_actions, action)), num_frames, axis=0)
+            expert = post_process_expert(expert, v['obj_pose'], int(v['obj_pose'].shape[1] / 7))
         else:
-            expert['obj_pose'] = np.repeat(np.array([0, 0, 0, 1, 0, 0,
-                                                     0])[None, ],
-                                           num_frames,
-                                           axis=0).astype(np.float)
-            expert['action_one_hot'] = np.repeat(np.array([0, 0, 0,
-                                                           0])[None, ],
-                                                 num_frames,
-                                                 axis=0).astype(np.float)
-            expert = post_process_expert(expert, expert['obj_pose'],
-                                         int(expert['obj_pose'].shape[1] / 7))
+            expert['obj_pose'] = np.repeat(np.array([0, 0, 0, 1, 0, 0, 0])[None,], num_frames, axis=0).astype(np.float)
+            expert['action_one_hot'] = np.repeat(np.array([0, 0, 0, 0])[None,], num_frames, axis=0).astype(np.float)
+            expert = post_process_expert(expert, expert['obj_pose'], int(expert['obj_pose'].shape[1] / 7))
 
         expert_dict[take] = expert
         # import pdb
