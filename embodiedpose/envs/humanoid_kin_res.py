@@ -64,6 +64,7 @@ from embodiedpose.models.humor.utils.velocities import estimate_velocities
 from embodiedpose.models.uhm_model import UHMModel
 from scipy.spatial.transform import Rotation as sRot
 import uhc.utils.pytorch3d_transforms as tR
+from uhc.utils.tools import CustomUnpickler
 import autograd.numpy as anp
 from autograd import elementwise_grad as egrad
 
@@ -182,7 +183,7 @@ class HumanoidKinEnvRes(HumanoidEnv):
             cc_iter = np.max([int(i.split("_")[-1].split(".")[0]) for i in os.listdir(cc_cfg.model_dir)])
             cp_path = '%s/iter_%04d.p' % (cc_cfg.model_dir, cc_iter)
         print(('loading model from checkpoint: %s' % cp_path))
-        model_cp = pickle.load(open(cp_path, "rb"))
+        model_cp = CustomUnpickler(open(cp_path, "rb")).load()
         self.cc_running_state = model_cp['running_state']
         self.cc_policy.load_state_dict(model_cp['policy_dict'])
         self.cc_value_net.load_state_dict(model_cp['value_dict'])

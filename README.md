@@ -14,6 +14,9 @@ TODOS:
   <img src="assets/gif/teaser.gif" />
 </div>
 
+## Introduction
+In this project, we develop "Embodied Human Pose Estimation", where we control a humanoid robot to move in a scene and estimate the human pose. Using 2D keypoint and scene information (camera pose and scene) as input, we estimate global pose in a casual fashion.
+
 ## Dependencies
 
 To create the environment, follow the following instructions: 
