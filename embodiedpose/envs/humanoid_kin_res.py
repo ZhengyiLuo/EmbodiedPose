@@ -568,9 +568,9 @@ class HumanoidKinEnvRes(HumanoidEnv):
 
         prev_qpos = self.prev_qpos[None]
 
-        # Calculating the velocity difference from simulation
+        # Calculating the velocity difference from simulation. We do not use target velocity. 
         qpos_stack = np.concatenate([prev_qpos, qpos])
-        pose_aa, trans = self.get_humanoid_pose_aa_trans(qpos_stack)
+        pose_aa, trans = self.get_humanoid_pose_aa_trans(qpos_stack) # Simulation state. 
         fk_result = self.humanoid.qpos_fk(torch.from_numpy(qpos_stack), to_numpy=False, full_return=False)
         trans_batch = torch.from_numpy(trans[None])
 

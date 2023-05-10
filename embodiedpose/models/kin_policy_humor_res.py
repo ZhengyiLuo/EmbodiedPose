@@ -78,7 +78,7 @@ class KinPolicyHumorRes(KinPolicy):
             self.kin_net.action_rnn.initialize(s_ctx.shape[1])
 
             action_mean_acc = []
-            for i in range(s_ctx.shape[0]):
+            for i in range(s_ctx.shape[0]): # here we have BPTT. 
                 curr_state = s_ctx[i]
                 action_ar = self.get_action(curr_state)
                 action_mean_acc.append(action_ar)

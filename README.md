@@ -56,7 +56,9 @@ python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
 ```
 
 ## Training
-TBD
+```
+python scripts/train_models.py --cfg tcn_voxel_4_5 
+```
 
 ## Citation
 If you find this work useful for your research, please cite our paper:
