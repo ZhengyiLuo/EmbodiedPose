@@ -37,7 +37,7 @@ mv mujoco210 ~/.mujoco/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.mujoco/mujoco210/bin
 ```
 
-3. Download and install Universal Humanoid Controller Locally and follow the instructions to setup the data. Make sure you have UHC running locally before proceeding:
+3. Download and install Universal Humanoid Controller Locally and follow the instructions to setup the data and download the models. Make sure you have UHC running locally before proceeding:
 
 ```
 git clone git@github.com:ZhengyiLuo/UniversalHumanoidControl.git 
@@ -45,17 +45,43 @@ cd UniversalHumanoidControl
 pip install -e .
 ```
 
-## Download data
-```
-bash download_data.sh
-```
-
 ## Evaluation 
 ```
 python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
 ```
 
+## Data processing for training & evaluating UHC
+
+EmbodiedPose is trained on a combinatino of AMASS, kinpoly, and h36m motion dataset. We generate paired 2D keypoints from the motion captre data and randomly selected camera information. 
+Use the following script to download trained models, evaluation data, and pretrained [humor models](https://github.com/davrempe/humor/blob/main/get_ckpt.sh).
+
+```
+bash download_data.sh
+```
+
+
+For AMASS, first, download the AMASS dataset from [AMASS](https://amass.is.tue.mpg.de/). Then, run the following script on the unzipped data:
+ 
+
+```
+python uhc/data_process/process_amass_raw.py
+```
+
+which dumps the data into the `amass_db_smplh.pt` file. Then, run 
+
+```
+python uhc/data_process/process_amass_db.py
+```
+
+For processing your own SMPL data for evaluation, you can refer to 
+```
+python uhc/data_process/process_smpl_data.py
+```
+
+
+
 ## Training
+
 ```
 python scripts/train_models.py --cfg tcn_voxel_4_5 
 ```

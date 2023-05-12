@@ -317,7 +317,6 @@ class UHMModel(nn.Module):
         for p in self.neutral_bm.parameters():
             p.requires_grad = False
         # self.ignore_keys = ['male_bm', 'female_bm', 'neutral_bm']
-
         if use_vposer:
             expr_dir = '/hdd/zen/data/SMPL/vposer_v1_0/'  # directory for the trained model along with the model code. obtain from https://smpl-x.is.tue.mpg.de/downloads
             self.vp, ps = load_vposer(expr_dir, vp_model=VPoser)
