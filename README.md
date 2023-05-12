@@ -59,6 +59,7 @@ Use the following script to download trained models, evaluation data, and pretra
 bash download_data.sh
 ```
 
+You will need to have downloaded smpl model files from [SMPL](https://smpl.is.tue.mpg.de/), [SMPL-H](https://smpl.is.tue.mpg.de/downloads), and [SMPL-X](https://smpl-x.is.tue.mpg.de/downloads).
 
 For AMASS, first, download the AMASS dataset from [AMASS](https://amass.is.tue.mpg.de/). Then, run the following script on the unzipped data:
  
