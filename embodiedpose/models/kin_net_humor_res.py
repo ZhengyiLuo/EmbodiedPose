@@ -108,7 +108,7 @@ class KinNetHumorRes(KinNetBase):
             self.num_context = int(np.prod(filter_widths))
 
         self.humor_models = [HumorModel(in_rot_rep="mat", out_rot_rep="aa", latent_size=48, model_data_config="smpl+joints+contacts", steps_in=1, use_vposer=cfg.get("use_vposer", True))]
-        load_humor_state("./data/humor/best_model.pth", self.humor_models[0], map_location=device)
+        load_humor_state("sample_data/humor/best_model.pth", self.humor_models[0], map_location=device)
         for param in self.humor_models[0].parameters():
             param.requires_grad = False
         to_device(device, self.humor_models[0])

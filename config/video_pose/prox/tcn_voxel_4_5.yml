@@ -1,18 +1,18 @@
-notes: "voxel mcp and sept, and better keypoint matching, reprodcuing 4_1 with new env."
+notes: "voxel mcp and sept, and better keypoint matching"
 proj_name: "scene+"
 
 data_specs:
-  prox_path: /hdd/zen/data/video_pose/prox/qualitative
+  prox_path: sample_data/prox/qualitative
   train_files_path:
     # - [/hdd/zen/data/ActBound/AMASS/amass_copycat_take5_5.pkl, amass]
-    - [/hdd/zen/data/ActBound/AMASS/amass_copycat_take5.pkl, amass]
-    - [/hdd/zen/data/ActBound/AMASS/kinpoly_mocap_smpl_grad_height.pkl, amass]
-    - [/hdd/zen/data/ActBound/AMASS/h36m_train_30_qpos_fk.pkl, amass]
+    - [sample_data/amass_copycat_take5.pkl, amass]
+    - [sample_data/kinpoly_mocap_smpl_grad_height.pkl, amass]
+    - [sample_data/h36m_train_30_qpos_fk.pkl, amass]
     # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_train_30_fk.p, scene_pose]
   test_files_path:
     # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk_valid.p, scene_pose]
     # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk.p, scene_pose]
-    - [/hdd/zen/data/video_pose/prox/qualitative/thirdeye_anns_proxd_overlap_full.pkl, scene_pose]
+    - [sample_data/thirdeye_anns_prox_overlap_no_clip.pkl, scene_pose]
 
   neutral_path: /hdd/zen/data/ActBound/AMASS/standing_neutral.pkl
   t_min: 30
