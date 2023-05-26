@@ -42,7 +42,7 @@ pip install -e .
 python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
 ```
 
-## Data processing for training & evaluating UHC
+## Data processing for training UHC
 
 EmbodiedPose is trained on a combinatino of AMASS, kinpoly, and h36m motion dataset. We generate paired 2D keypoints from the motion captre data and randomly selected camera information. 
 Use the following script to download trained models, evaluation data, and pretrained [humor models](https://github.com/davrempe/humor/blob/main/get_ckpt.sh).
@@ -66,7 +66,7 @@ which dumps the data into the `amass_db_smplh.pt` file. Then, run
 python uhc/data_process/process_amass_db.py
 ```
 
-For processing your own SMPL data for evaluation, you can refer to the required data fields in `process_amass_db.py`. 
+For processing your own SMPL data for training, you can refer to the required data fields in `process_amass_db.py`. 
 
 
 
