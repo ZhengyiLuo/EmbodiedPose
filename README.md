@@ -66,10 +66,7 @@ which dumps the data into the `amass_db_smplh.pt` file. Then, run
 python uhc/data_process/process_amass_db.py
 ```
 
-For processing your own SMPL data for evaluation, you can refer to 
-```
-python uhc/data_process/process_smpl_data.py
-```
+For processing your own SMPL data for evaluation, you can refer to the required data fields in `process_amass_db.py`. 
 
 
 
