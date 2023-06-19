@@ -3,7 +3,7 @@ from uhc.khrylib.utils import get_body_qposaddr
 import numpy as np
 
 MUJOCO_2_SMPL = np.array([0, 1, 5, 9, 2, 6, 10, 3, 7, 11, 4, 8, 12, 14, 19, 13, 15, 20, 16, 21, 17, 22, 18, 23])
-SMPL_2_OP = np.array([False, True, True, True, True, True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False, False, False, False, False])
+SMPL_2_OP = np.array([False, True, True, True, True, True, True, True, True, True, True, True, True, True, True, False, False, False, False, False, False, False, False, False, False]) # 25 joints -> 14 joints
 OP_14_to_OP_12 = np.array([True, True, True, True, True, True, True, True, False, True, True, False, True, True])
 
 

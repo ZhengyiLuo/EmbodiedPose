@@ -172,8 +172,6 @@ class SceneVisulizer(CopycatVisualizer):
         if self.agent.cfg.mode != "disp_stats":
             for loader in self.agent.test_data_loaders:
                 for take_key in loader.data_keys:
-                    take_key = "N0Sofa_00145_01"
-
                     print(f"Generating for {take_key} seqlen: {loader.get_sample_len_from_key(take_key)}")
                     context_sample = loader.get_sample_from_key(take_key, full_sample=True, return_batch=True)
                     self.agent.env.load_context(self.agent.policy_net.init_context(context_sample, random_cam=not 'cam' in context_sample))

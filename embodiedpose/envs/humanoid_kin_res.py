@@ -153,7 +153,7 @@ class HumanoidKinEnvRes(HumanoidEnv):
 
         self.bm = bm = self.motion_prior.bm_dict['neutral']
         self.smpl2op_map = smpl_to_openpose(bm.model_type, use_hands=False, use_face=False, use_face_contour=False, openpose_format='coco25')
-        self.smpl_2op_submap = self.smpl2op_map[self.smpl2op_map < 22]
+        self.smpl_2op_submap = self.smpl2op_map[self.smpl2op_map < 22] # Convert from SMPL (24) to OpenPose 
         # if cfg.masterfoot:
         #     mujoco_env.MujocoEnv.__init__(self, cfg.mujoco_model_file)
         # else:

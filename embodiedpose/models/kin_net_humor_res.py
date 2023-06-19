@@ -63,6 +63,7 @@ PROX_SCENE = ['BasementSittingBooth', 'MPH11', 'MPH112', 'MPH16', 'MPH1Library',
 
 
 def smpl_op_to_op(pred_joints2d):
+    # convert from the  SMPL open pose order to the common 12 keypoint order. 
     new_2d = torch.cat([     pred_joints2d[..., [1, 4], :].mean(axis = -2, keepdims = True), \
                              pred_joints2d[..., 1:7, :], \
                              pred_joints2d[..., [7, 8, 11], :].mean(axis = -2, keepdims = True), \

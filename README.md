@@ -1,3 +1,4 @@
+
 # Embodied Scene-aware Human Pose Estimation
 
 [[paper]](https://arxiv.org/abs/2206.09106) [[website]](https://zhengyiluo.github.io/projects/embodied_pose/) [[Video]](https://www.youtube.com/watch?v=8Ae0xzqAtm8)
@@ -5,6 +6,16 @@
 <div float="center">
   <img src="assets/gif/teaser.gif" />
 </div>
+
+## News 🚩
+
+
+[June 18, 2023 ] Building in-the-wild Demo. 
+
+[March 31, 2023 ] Training code released.
+
+[February 25, 2023 ] Evaluation code released.
+
 
 ## Introduction
 In this project, we develop "Embodied Human Pose Estimation", where we control a humanoid robot to move in a scene and estimate the human pose. Using 2D keypoint and scene information (camera pose and scene) as input, we estimate global pose in a casual fashion.
@@ -41,6 +52,24 @@ pip install -e .
 ```
 python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
 ```
+
+## Evaluate on In-the-wild Data 
+
+To run EmbodiedPose on in-the-wild data (mainly as a proof-of-concept), we will use [HybrIK](https://github.com/Jeff-sjtu/HybrIK) to generate the camera information, 2D keypoints, initialization pose. We do not use the 3D pose estimation (though directly use UHC to imitate the pose is possible) and only uses the 2D keypoints. 
+
+First, run HybrIK on the in-the-wild following their instructions:
+
+```
+python scripts/demo_video.py --video-name examples/dance.mp4 --out-dir res_dance --save-pk 
+```
+
+Using the saved pk file, we will further process it into the format that EmbodiedPose can use:
+
+```
+```
+
+
+
 
 ## Data processing for training UHC
 
