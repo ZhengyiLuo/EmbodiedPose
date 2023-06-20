@@ -251,12 +251,14 @@ if __name__ == "__main__":
     parser.add_argument("--smplx", action="store_true", default=False)
     parser.add_argument("--hide_im", action="store_true", default=False)
     parser.add_argument("--filter_res", action="store_true", default=False)
+    parser.add_argument("--no_filter_2d", action="store_true", default=False)
     args = parser.parse_args()
 
     cfg = Config(cfg_id=args.cfg, create_dirs=False)
     cfg.update(args)
 
     flags.debug = args.debug
+    flags.no_filter_2d = args.no_filter_2d
     cfg.no_log = True
     if args.no_fail_safe:
         cfg.fail_safe = False

@@ -359,7 +359,7 @@ class HumanoidKinEnvRes(HumanoidEnv):
                     [self.j2d_seq_feat.pop() for _ in range(self.num_context // 2)]
 
                     [self.j2d_seq_feat.append(feat) for feat in joints2d_gt[..., :2]]
-
+            
             j2d_seq = np.array(self.j2d_seq_feat).flatten()
             obs.append(j2d_seq)
 

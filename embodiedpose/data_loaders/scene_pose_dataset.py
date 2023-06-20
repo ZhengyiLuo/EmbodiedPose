@@ -11,7 +11,7 @@ import math
 from uhc.data_loaders.dataset_batch import DatasetBatch
 from embodiedpose.models.humor.utils.humor_mujoco import SMPL_2_OP, OP_14_to_OP_12
 from scipy.ndimage import gaussian_filter1d
-
+from uhc.utils.flags import flags
 
 def positionalencoding1d(d_model, length):
     """
@@ -103,8 +103,12 @@ class ScenePoseDataset(DatasetBatch):
             pose_aa = curr_data["pose_aa"]
             seq_len = pose_aa.shape[0]
 
-            # data_processed["joints2d"][take] = curr_data["joints2d"][:, SMPL_2_OP][..., OP_14_to_OP_12, :]
-            data_processed["joints2d"][take] = filter_2d_kps(curr_data["joints2d"][:, SMPL_2_OP][..., OP_14_to_OP_12, :])
+            if flags.no_filter_2d:
+                data_processed["joints2d"][take] = curr_data["joints2d"][:, SMPL_2_OP][..., OP_14_to_OP_12, :]
+            else:
+                data_processed["joints2d"][take] = filter_2d_kps(curr_data["joints2d"][:, SMPL_2_OP][..., OP_14_to_OP_12, :])
+                
+                
 
             data_processed["pose_6d"][take] = curr_data["pose_6d"]
             data_processed["pose_aa"][take] = curr_data["pose_aa"]

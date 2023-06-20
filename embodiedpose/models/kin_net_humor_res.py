@@ -533,7 +533,7 @@ class KinNetHumorRes(KinNetBase):
 
                 data_dict['trans'][:, :, 0] += (x - data_dict['trans'][:, 0, 0])
                 data_dict['trans'][:, :, 1] += (y - data_dict['trans'][:, 0, 1])
-
+            
             data_dict['cam'] = self.cam_params
             camera_params_torch = {k: torch.from_numpy(v).float().to(device) if isNpArray(v) else v for k, v in self.cam_params.items()}
 

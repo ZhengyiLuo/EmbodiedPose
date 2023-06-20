@@ -4,13 +4,15 @@
 [[paper]](https://arxiv.org/abs/2206.09106) [[website]](https://zhengyiluo.github.io/projects/embodied_pose/) [[Video]](https://www.youtube.com/watch?v=8Ae0xzqAtm8)
 
 <div float="center">
+    <img src="assets/gif/wild_demo1.gif" />
+    <img src="assets/gif/wild_demo2.gif" />
   <img src="assets/gif/teaser.gif" />
 </div>
 
 ## News 🚩
 
 
-[June 18, 2023 ] Building in-the-wild Demo. 
+[June 18, 2023 ] Releaseing (proof-of-concept) in-the-wild Demo. 
 
 [March 31, 2023 ] Training code released.
 
@@ -55,17 +57,24 @@ python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
 
 ## Evaluate on In-the-wild Data 
 
-To run EmbodiedPose on in-the-wild data (mainly as a proof-of-concept), we will use [HybrIK](https://github.com/Jeff-sjtu/HybrIK) to generate the camera information, 2D keypoints, initialization pose. We do not use the 3D pose estimation (though directly use UHC to imitate the pose is possible) and only uses the 2D keypoints. 
+To run EmbodiedPose on in-the-wild data (mainly as a proof-of-concept, as EmbodiedPose is really great at recovering global motion, but isn't great at capturing high-frequecy movement), we will use [HybrIK](https://github.com/Jeff-sjtu/HybrIK) to generate the camera information, 2D keypoints, initialization pose. We do not use the 3D pose estimation (though directly use UHC to imitate the pose is possible) and only uses the 2D keypoints. 
 
 First, run HybrIK on the in-the-wild following their instructions:
 
 ```
-python scripts/demo_video.py --video-name examples/dance.mp4 --out-dir res_dance --save-pk 
+python scripts/demo_video.py --video-name assets/demo_videos/embodied_demo.mp4 --out-dir sample_data/res_dance --save-pk 
 ```
 
-Using the saved pk file, we will further process it into the format that EmbodiedPose can use:
+Using the saved pk file, we will further process it into the format that EmbodiedPose can use using the script `process_hybrik_data.py`. Details of how to debug this script can be found in the notebook `in_the_wild_poc.ipynb`. 
+
 
 ```
+python scripts/process_hybrik_data.py --input sample_data/res_dance/res.pk --output sample_data/wild_processed.pkl
+```
+
+Finally, run the following script to evaluate the model on the in-the-wild data. 
+```
+python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1 --data sample_data/wild_processed.pkl
 ```
 
 
