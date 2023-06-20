@@ -12,7 +12,7 @@
 ## News 🚩
 
 
-[June 18, 2023 ] Releaseing (proof-of-concept) in-the-wild Demo. 
+[June 18, 2023 ] Releaseing in-the-wild Demo. Please note that this is mainly as a proof-of-concept as EmbodiedPose is great at recovering global motion, but isn't so good at capturing high-frequecy movement
 
 [March 31, 2023 ] Training code released.
 
