@@ -1,6 +1,8 @@
 
 # Embodied Scene-aware Human Pose Estimation
 
+Official implementation of NeurIPS 2022 paper: "Embodied Scene-aware Human Pose Estimation".
+
 [[paper]](https://arxiv.org/abs/2206.09106) [[website]](https://zhengyiluo.github.io/projects/embodied_pose/) [[Video]](https://www.youtube.com/watch?v=8Ae0xzqAtm8)
 
 <div float="center">
