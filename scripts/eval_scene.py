@@ -172,6 +172,7 @@ class SceneVisulizer(CopycatVisualizer):
         if self.agent.cfg.mode != "disp_stats":
             for loader in self.agent.test_data_loaders:
                 for take_key in loader.data_keys:
+                    take_key = "N0Sofa_00145_01"
                     print(f"Generating for {take_key} seqlen: {loader.get_sample_len_from_key(take_key)}")
                     context_sample = loader.get_sample_from_key(take_key, full_sample=True, return_batch=True)
                     self.agent.env.load_context(self.agent.policy_net.init_context(context_sample, random_cam=not 'cam' in context_sample))
@@ -180,28 +181,19 @@ class SceneVisulizer(CopycatVisualizer):
 
                     eval_res = self.agent.eval_seq(take_key, loader)
 
-                    self.agent.env.smpl_robot.write_xml("test.xml")
-
                     print("Agent Mass:", mujoco_py.functions.mj_getTotalmass(self.agent.env.model), f"Seq_len: {eval_res['gt'].shape[0]}")
                     if cfg.model_specs.get("use_tcn", False):
                         self.body_pos = eval_res['world_body_pos'] + eval_res['world_trans']
 
-                    # self.body_pos = eval_res['world_body_pos'] + eval_res['world_trans'][0:1]
-
-                    print_str = "\t".join([f"{k}: {np.mean(v):.3f}" for k, v in eval_res.items() if not k in [
-                        "gt",
-                        "pred",
-                        "pred_jpos",
-                        "gt_jpos",
-                        "reward",
-                        "gt_vertices",
-                        "pred_vertices",
-                        "gt_joints",
-                        "pred_joints",
-                        "action",
-                        "vf_world",
-                    ] and (not isinstance(v, np.ndarray))])
+                    metric_res = compute_metrics(eval_res, None)
+                    metric_res = {k: np.mean(v) for k, v in metric_res.items()}
+                    print_str = " \t".join([f"{k}: {v:.3f}" for k, v in metric_res.items()])
+                    print("!!!Metrics computed against GT, for PROX it this is results from HuMoR")
+                    print("!!!Metrics computed against GT, for PROX it this is results from HuMoR")
+                    print("!!!Metrics computed against GT, for PROX it this is results from HuMoR")
                     print(print_str)
+                    
+                    
                     self.env_vis.reload_sim_model(
                         # self.agent.env.smpl_robot.export_vis_string_self(
                         #     num=3, num_cones=16).decode("utf-8"))
