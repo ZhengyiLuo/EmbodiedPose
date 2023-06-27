@@ -150,7 +150,7 @@ class SceneVisulizer(CopycatVisualizer):
                     num=0, num_cones=0).decode("utf-8"))
             v = data_res[take_key]
 
-            # v['pred'][:, 7:] = gaussian_filter1d(v['pred'][:, 7:], sigma=2, axis = 0)
+            # v['pred'][:, 7:] = gaussian_filter1d(v['pred'][:, 7:], sigma=2, axis = 0) #optionally smooth the results, not used for the paper. 
             # v['pred'][:, :3] = gaussian_filter1d(v['pred'][:, :3], sigma=2, axis = 0)
 
             # print_str = " \t".join([f"{k}: {v:.3f}" for k, v in compute_metrics(v, None).items()])
