@@ -1,5 +1,5 @@
 gdown
-numpy
+numpy==1.23.1
 scipy
 ipdb
 vtk
