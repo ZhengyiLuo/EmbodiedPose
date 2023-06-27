@@ -8,6 +8,6 @@ gdown https://drive.google.com/uc?id=1BvRl4PaLOf7l4tGzu2I2-sM6J0ER1MQQ -O  sampl
 gdown https://drive.google.com/uc?id=1GdRmh_J6cC0SDJJLqrl6aAQtfNNqWnr9 -O  sample_data/res_wild/res.pkl # wild fitted
 gdown https://drive.google.com/uc?id=1i6fr2qlYiEvZb8pTudAzH6zkbuunrvSk -O  sample_data/humor/ # pretrained humor model
 gdown https://drive.google.com/uc?id=16Nws1EmlMm35T-GlXpapJ7EAv8SbCG3R -O  sample_data/prox/qualitative/ && unzip sample_data/prox/qualitative/prox_calibration.zip -d sample_data/prox/qualitative/ 
-gdown https://drive.google.com/uc?id=1CYX0_4NLznaHW7JFpYQ9zpxXTyc5ylLe -O  results/scene+/tcn_voxel_4_5/models/ # pretrained EmbodiedPose policy
-
+gdown https://drive.google.com/uc?id=18IS8Qlqh6faAABpn2Nm1Z4KACJTWxTBR -O  results/scene+/tcn_voxel_4_5/models/ # pretrained EmbodiedPose policy
+gdown https://drive.google.com/uc?id=1nxWxagRZA8FjztuuXMiYEyt4HENRbPsV -O  UniversalHumanoidControl/results/motion_im/uhc_explicit/models/ # pretrained UHC, used to train the EmbodiedPose policy
 
