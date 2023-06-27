@@ -14,7 +14,7 @@ data_specs:
     # - [/hdd/zen/data/video_pose/h36m/data_fit/h36m_test_30_fk.p, scene_pose]
     - [sample_data/thirdeye_anns_prox_overlap_no_clip.pkl, scene_pose]
 
-  neutral_path: /hdd/zen/data/ActBound/AMASS/standing_neutral.pkl
+  neutral_path: sample_data/standing_neutral.pkl
   t_min: 30
   t_max: 300
   fr_num: 120
