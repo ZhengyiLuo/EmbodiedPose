@@ -1,7 +1,7 @@
 
 # Embodied Scene-aware Human Pose Estimation
 
-Official implementation of NeurIPS 2022 paper: "Embodied Scene-aware Human Pose Estimation".
+Official implementation of NeurIPS 2022 paper: "Embodied Scene-aware Human Pose Estimation". In this paper, we estimate 3D poses based on a simulated agent's proprioception and scene awareness, along with external third-person observations.
 
 [[paper]](https://arxiv.org/abs/2206.09106) [[website]](https://zhengyiluo.github.io/projects/embodied_pose/) [[Video]](https://www.youtube.com/watch?v=8Ae0xzqAtm8)
 
@@ -83,7 +83,7 @@ python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1 --data sample_data/w
 
 
 
-## Data processing for training UHC
+## Data processing for training EmbodiedPose
 
 EmbodiedPose is trained on a combinatino of AMASS, kinpoly, and h36m motion dataset. We generate paired 2D keypoints from the motion captre data and randomly selected camera information. 
 Use the following script to download trained models, evaluation data, and pretrained [humor models](https://github.com/davrempe/humor/blob/main/get_ckpt.sh).
