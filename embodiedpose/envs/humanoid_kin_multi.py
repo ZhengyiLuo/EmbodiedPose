@@ -27,15 +27,15 @@ import os.path as osp
 
 sys.path.append(os.getcwd())
 
-from copycat.khrylib.rl.envs.common import mujoco_env
-from copycat.khrylib.utils import *
-from copycat.khrylib.utils.transformation import quaternion_from_euler, quaternion_from_euler_batch
-from copycat.khrylib.rl.core.policy_gaussian import PolicyGaussian
-from copycat.khrylib.rl.core.critic import Value
-from copycat.khrylib.models.mlp import MLP
-from copycat.models.policy_mcp import PolicyMCP
-from copycat.utils.flags import flags
-from copycat.envs.humanoid_im import HumanoidEnv
+from uhc.khrylib.rl.envs.common import mujoco_env
+from uhc.khrylib.utils import *
+from uhc.khrylib.utils.transformation import quaternion_from_euler, quaternion_from_euler_batch
+from uhc.khrylib.rl.core.policy_gaussian import PolicyGaussian
+from uhc.khrylib.rl.core.critic import Value
+from uhc.khrylib.models.mlp import MLP
+from uhc.models.policy_mcp import PolicyMCP
+from uhc.utils.flags import flags
+from uhc.envs.humanoid_im import HumanoidEnv
 
 from gym import spaces
 from mujoco_py import functions as mjf
@@ -44,12 +44,12 @@ import time
 from scipy.linalg import cho_solve, cho_factor
 import joblib
 
-from copycat.smpllib.smpl_mujoco import smpl_6d_to_qpose, smpl_to_qpose, qpos_to_smpl, smpl_to_qpose_torch, smpl_to_qpose_multi
-from copycat.utils.torch_geometry_transforms import (
+from uhc.smpllib.smpl_mujoco import smpl_6d_to_qpose, smpl_to_qpose, qpos_to_smpl, smpl_to_qpose_torch, smpl_to_qpose_multi
+from uhc.utils.torch_geometry_transforms import (
     angle_axis_to_rotation_matrix as aa2mat, rotation_matrix_to_angle_axis as
     mat2aa)
 import json
-from copycat.utils.transformation import (
+from uhc.utils.transformation import (
     quaternion_from_euler_batch,
     quaternion_multiply_batch,
     quat_mul_vec,
@@ -58,26 +58,26 @@ from copycat.utils.transformation import (
     quaternion_inverse_batch,
 )
 
-from sceneplus.models.humor.utils.humor_mujoco import reorder_joints_to_humor, MUJOCO_2_SMPL
-from sceneplus.models.humor.humor_model import HumorModel
-from sceneplus.models.humor.utils.torch import load_state as load_humor_state
-from sceneplus.models.humor.body_model.utils import smpl_to_openpose
-from sceneplus.models.humor.utils.velocities import estimate_velocities
-from sceneplus.models.uhm_model import UHMModel
+from embodiedpose.models.humor.utils.humor_mujoco import reorder_joints_to_humor, MUJOCO_2_SMPL
+from embodiedpose.models.humor.humor_model import HumorModel
+from embodiedpose.models.humor.utils.torch import load_state as load_humor_state
+from embodiedpose.models.humor.body_model.utils import smpl_to_openpose
+from embodiedpose.models.humor.utils.velocities import estimate_velocities
+from embodiedpose.models.uhm_model import UHMModel
 from scipy.spatial.transform import Rotation as sRot
 import copycat.utils.pytorch3d_transforms as tR
 import autograd.numpy as anp
 from autograd import elementwise_grad as egrad
-from copycat.smpllib.torch_smpl_humanoid import Humanoid
-from copycat.smpllib.np_smpl_humanoid_batch import Humanoid_Batch
-from sceneplus.smpllib.scene_robot import SceneRobot
-from sceneplus.smpllib.multi_robot import Multi_Robot
-from copycat.smpllib.smpl_parser import (
+from uhc.smpllib.torch_smpl_humanoid import Humanoid
+from uhc.smpllib.np_smpl_humanoid_batch import Humanoid_Batch
+from embodiedpose.smpllib.scene_robot import SceneRobot
+from embodiedpose.smpllib.multi_robot import Multi_Robot
+from uhc.smpllib.smpl_parser import (
     SMPL_EE_NAMES,
     SMPL_BONE_ORDER_NAMES,
     SMPLH_BONE_ORDER_NAMES,
 )
-from copycat.smpllib.smpl_mujoco import SMPLConverter
+from uhc.smpllib.smpl_mujoco import SMPLConverter
 
 
 class HumanoidKinEnvMulti(HumanoidEnv):

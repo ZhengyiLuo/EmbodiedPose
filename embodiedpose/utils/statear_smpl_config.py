@@ -7,7 +7,7 @@ import os.path as osp
 
 sys.path.append(os.getcwd())
 
-# from sceneplus.utils import recreate_dirs
+# from embodiedpose.utils import recreate_dirs
 
 
 class Config:

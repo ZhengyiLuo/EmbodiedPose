@@ -7,7 +7,7 @@ from torch.distributions.normal import Normal
 
 from embodiedpose.models.humor.utils.transforms import (
      compute_world2aligned_mat, rotation_matrix_to_angle_axis)
-# from sceneplus.models.humor.utils.transforms import convert_to_rotmat
+# from embodiedpose.models.humor.utils.transforms import convert_to_rotmat
 from embodiedpose.models.humor.utils.transforms import convert_to_rotmat_res as convert_to_rotmat
 from embodiedpose.models.humor.body_model.utils import SMPL_JOINTS, SMPLH_PATH
 from embodiedpose.models.humor.body_model.body_model import BodyModel

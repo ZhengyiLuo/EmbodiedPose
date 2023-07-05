@@ -15,9 +15,9 @@ import numpy as np
 import mujoco_py
 from mujoco_py import load_model_from_path, load_model_from_xml, MjSim, MjViewer
 
-from copycat.smpllib.smpl_robot import Robot
+from uhc.smpllib.smpl_robot import Robot
 from lxml.etree import XMLParser, parse, ElementTree, Element, SubElement
-from copycat.utils.config_utils.copycat_config import Config as CC_Config
+from uhc.utils.config_utils.copycat_config import Config as CC_Config
 from copy import deepcopy
 import shutil
 from lxml import etree
@@ -29,12 +29,12 @@ from collections import defaultdict
 from lxml.etree import XMLParser, parse, ElementTree, Element, SubElement
 from lxml import etree
 from io import BytesIO
-from copycat.utils.config_utils.copycat_config import Config
+from uhc.utils.config_utils.copycat_config import Config
 from mujoco_py import load_model_from_path, load_model_from_xml, MjSim, MjViewer
-from copycat.khrylib.mocap.skeleton import Skeleton
-from copycat.khrylib.mocap.skeleton_mesh import Skeleton as SkeletonMesh
-from copycat.khrylib.mocap.skeleton_mesh_v2 import Skeleton as SkeletonMeshV2
-from copycat.smpllib.smpl_parser import (
+from uhc.khrylib.mocap.skeleton import Skeleton
+from uhc.khrylib.mocap.skeleton_mesh import Skeleton as SkeletonMesh
+from uhc.khrylib.mocap.skeleton_mesh_v2 import Skeleton as SkeletonMeshV2
+from uhc.smpllib.smpl_parser import (
     SMPL_Parser,
     SMPLH_Parser,
     SMPLX_Parser,
@@ -42,15 +42,15 @@ from copycat.smpllib.smpl_parser import (
 from collections import defaultdict
 from scipy.spatial import ConvexHull
 from stl import mesh
-from copycat.utils.geom import quadric_mesh_decimation, center_scale_mesh
+from uhc.utils.geom import quadric_mesh_decimation, center_scale_mesh
 import uuid
 import atexit
 import shutil
 import joblib
 # from scipy.spatial.qhull import _Qhull
-from copycat.utils.flags import flags
+from uhc.utils.flags import flags
 import cv2
-from copycat.smpllib.smpl_robot import get_joint_geometries, denormalize_range
+from uhc.smpllib.smpl_robot import get_joint_geometries, denormalize_range
 import copy
 
 

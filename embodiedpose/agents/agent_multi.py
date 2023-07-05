@@ -31,28 +31,28 @@ import wandb
 os.environ["OMP_NUM_THREADS"] = "1"
 sys.path.append(os.getcwd())
 
-from copycat.khrylib.utils import to_device, create_logger, ZFilter
-from copycat.khrylib.models.mlp import MLP
-from copycat.khrylib.rl.core import estimate_advantages
-from copycat.khrylib.utils.torch import *
-from copycat.khrylib.utils.memory import Memory
-from copycat.khrylib.rl.core import LoggerRL
-from copycat.khrylib.rl.core.critic import Value
-from copycat.khrylib.utils import get_eta_str
-from copycat.utils.flags import flags
-from copycat.khrylib.utils.logger import create_logger
+from uhc.khrylib.utils import to_device, create_logger, ZFilter
+from uhc.khrylib.models.mlp import MLP
+from uhc.khrylib.rl.core import estimate_advantages
+from uhc.khrylib.utils.torch import *
+from uhc.khrylib.utils.memory import Memory
+from uhc.khrylib.rl.core import LoggerRL
+from uhc.khrylib.rl.core.critic import Value
+from uhc.khrylib.utils import get_eta_str
+from uhc.utils.flags import flags
+from uhc.khrylib.utils.logger import create_logger
 
-from copycat.envs import env_dict
-from copycat.models.kin_policy import KinPolicy
-from copycat.agents.agent_uhm import AgentUHM
+from uhc.envs import env_dict
+from uhc.models.kin_policy import KinPolicy
+from uhc.agents.agent_uhm import AgentUHM
 
-from sceneplus.data_loaders import data_dict
-from sceneplus.envs import env_dict
-from sceneplus.models import policy_dict
-from sceneplus.core.reward_function import reward_func
-from sceneplus.core.trajbatch_humor import TrajBatchHumor
-from copycat.utils.torch_ext import isNpArray
-from copycat.smpllib.smpl_eval import compute_metrics
+from embodiedpose.data_loaders import data_dict
+from embodiedpose.envs import env_dict
+from embodiedpose.models import policy_dict
+from embodiedpose.core.reward_function import reward_func
+from embodiedpose.core.trajbatch_humor import TrajBatchHumor
+from uhc.utils.torch_ext import isNpArray
+from uhc.smpllib.smpl_eval import compute_metrics
 
 
 class AgentMulti(AgentUHM):
