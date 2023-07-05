@@ -1,7 +1,7 @@
 
 # Embodied Scene-aware Human Pose Estimation
 
-Official implementation of NeurIPS 2022 paper: "Embodied Scene-aware Human Pose Estimation".
+Official implementation of NeurIPS 2022 paper: "Embodied Scene-aware Human Pose Estimation". In this paper, we estimate 3D poses based on a simulated agent's proprioception and scene awareness, along with external third-person observations.
 
 [[paper]](https://arxiv.org/abs/2206.09106) [[website]](https://zhengyiluo.github.io/projects/embodied_pose/) [[Video]](https://www.youtube.com/watch?v=8Ae0xzqAtm8)
 
@@ -44,12 +44,13 @@ mv mujoco210 ~/.mujoco/
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:~/.mujoco/mujoco210/bin
 ```
 
-3. Download and install Universal Humanoid Controller Locally and follow the instructions to setup the data and download the models. Make sure you have UHC running locally before proceeding:
+3. Download and install [Universal Humanoid Controller]([url](https://github.com/ZhengyiLuo/UniversalHumanoidControl)) locally and **follow the instructions to setup the data and download the models**. **❗️❗️❗️Make sure you have UHC running locally before proceeding**:
 
 ```
 git clone git@github.com:ZhengyiLuo/UniversalHumanoidControl.git 
 cd UniversalHumanoidControl
 pip install -e .
+bash download_data.sh
 ```
 
 
