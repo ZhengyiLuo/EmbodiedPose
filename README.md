@@ -52,6 +52,34 @@ cd UniversalHumanoidControl
 pip install -e .
 ```
 
+
+## Data processing for evaluating/training UHC
+
+EmbodiedPose is trained on a combinatino of AMASS, kinpoly, and h36m motion dataset. We generate paired 2D keypoints from the motion captre data and randomly selected camera information. 
+Use the following script to download trained models, evaluation data, and pretrained [humor models](https://github.com/davrempe/humor/blob/main/get_ckpt.sh).
+
+```
+bash download_data.sh
+```
+
+You will need to have downloaded smpl model files from [SMPL](https://smpl.is.tue.mpg.de/), [SMPL-H](https://smpl.is.tue.mpg.de/downloads), and [SMPL-X](https://smpl-x.is.tue.mpg.de/downloads).
+
+If you wish to train EmbodiedPose, first, download the AMASS dataset from [AMASS](https://amass.is.tue.mpg.de/). Then, run the following script on the unzipped data:
+ 
+
+```
+python uhc/data_process/process_amass_raw.py
+```
+
+which dumps the data into the `amass_db_smplh.pt` file. Then, run 
+
+```
+python uhc/data_process/process_amass_db.py
+```
+
+For processing your own SMPL data for training, you can refer to the required data fields in `process_amass_db.py`. 
+
+
 ## Evaluation 
 ```
 python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1
@@ -78,35 +106,6 @@ Finally, run the following script to evaluate the model on the in-the-wild data.
 ```
 python scripts/eval_scene.py --cfg tcn_voxel_4_5 --epoch -1 --data sample_data/wild_processed.pkl
 ```
-
-
-
-
-## Data processing for training UHC
-
-EmbodiedPose is trained on a combinatino of AMASS, kinpoly, and h36m motion dataset. We generate paired 2D keypoints from the motion captre data and randomly selected camera information. 
-Use the following script to download trained models, evaluation data, and pretrained [humor models](https://github.com/davrempe/humor/blob/main/get_ckpt.sh).
-
-```
-bash download_data.sh
-```
-
-You will need to have downloaded smpl model files from [SMPL](https://smpl.is.tue.mpg.de/), [SMPL-H](https://smpl.is.tue.mpg.de/downloads), and [SMPL-X](https://smpl-x.is.tue.mpg.de/downloads).
-
-For AMASS, first, download the AMASS dataset from [AMASS](https://amass.is.tue.mpg.de/). Then, run the following script on the unzipped data:
- 
-
-```
-python uhc/data_process/process_amass_raw.py
-```
-
-which dumps the data into the `amass_db_smplh.pt` file. Then, run 
-
-```
-python uhc/data_process/process_amass_db.py
-```
-
-For processing your own SMPL data for training, you can refer to the required data fields in `process_amass_db.py`. 
 
 
 
